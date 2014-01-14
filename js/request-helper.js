@@ -12,3 +12,14 @@ requestHelper.postJSON = function(url, body){
   });
 
 };
+
+
+requestHelper.postForm = function(url, uriEncodedBody) {
+
+  return $.ajax({
+    type: "POST",
+    url: url,
+    contentType: 'application/x-www-form-urlencoded',
+    data: uriEncodedBody
+  });
+};

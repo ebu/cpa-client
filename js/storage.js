@@ -44,6 +44,6 @@ storage.volatile = {
 };
 
 storage.reset = function(){
-  storage.volatile = {};
-  $.localStorage.delete('client_information');
+  storage.volatile.data = {};
+  localStorage.clear();
 };
