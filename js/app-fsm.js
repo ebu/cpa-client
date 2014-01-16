@@ -92,7 +92,7 @@ var appFsm = new machina.Fsm({
 
         var self = this;
         setTimeout(function() {
-          storage.volatile.put('channel_list', [{name: 'BBC1', data:''},{name:'BBC2', data:''}]);
+          storage.volatile.put('channel_list', [{name: 'BBC1', data:''}, {name:'BBC2', data:''}]);
           self.transition('CHANNEL_LIST');
         }, 100);
       }
@@ -187,8 +187,6 @@ var appFsm = new machina.Fsm({
        appViews.successfulPairing(accessTokens[0].token);
       }
     }
-
-
   }
 });
 

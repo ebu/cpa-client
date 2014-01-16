@@ -2,6 +2,7 @@
 Logger.useDefaults();
 
 Logger.setHandler(function (messages, context) {
+
   console.log('[' + context.level.name + '] ', messages);
 
   var messages_str = '';
