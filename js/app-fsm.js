@@ -17,22 +17,30 @@ var appViews = {
   },
 
   channelList: function(channelList) {
-    var html = new EJS({url: 'views/channel_list.ejs'}).render({channels: channelList});
+    var html = new EJS({url: 'views/channel_list.ejs'}).render({
+      channels: channelList
+    });
     this.switchView('channel_list', html);
   },
 
   error: function(errorMessage) {
-    var html = new EJS({url: 'views/error.ejs'}).render({message: errorMessage});
+    var html = new EJS({url: 'views/error.ejs'}).render({
+      message: errorMessage
+    });
     this.switchView('error', html);
   },
 
   displayUserCode: function(userCode, verificationUri) {
-    var html = new EJS({url: 'views/user_code.ejs'}).render({user_code: userCode, verification_uri: verificationUri});
+    var html = new EJS({url: 'views/user_code.ejs'}).render({
+      user_code: userCode, verification_uri: verificationUri
+    });
     this.switchView('user code', html);
   },
 
   successfulPairing: function(accessToken) {
-    var html = new EJS({url: 'views/success.ejs'}).render({message: 'The device is paired. Here is the access token: '+ accessToken});
+    var html = new EJS({url: 'views/success.ejs'}).render({
+      message: 'The device is paired. Here is the access token: '+ accessToken
+    });
     this.switchView('Device paired', html);
   }
 
