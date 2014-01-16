@@ -50,10 +50,10 @@ var appFsm = new machina.Fsm({
       self.transition('DEVICE_OFF');
     });
 
-    self.on('*', function(message, options, a) {
-      console.log(options, message);
+    self.on('*', function(message, options) {
+
       if(message === 'transition') {
-        Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ', options.toState );
+        Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ', options.action, ' -> ', options.toState );
       } else {
         Logger.info('[FSM] ', message, ': ', options);
       }
@@ -156,7 +156,6 @@ var appFsm = new machina.Fsm({
     },
 
     'AUTHORIZATION_PENDING': {
-
       _onEnter: function(){
         var self = this;
         var pairingCode = storage.persistent.get('pairing_code');
@@ -173,12 +172,11 @@ var appFsm = new machina.Fsm({
           pairingCode.device_code, function(err, authorizationPending){
             if(err) {
               self.error(err);
-            } else if(authorizationPending){
+            } else if(authorizationPending) {
               alert('Go to the website');
             } else {
               self.transition('SUCCESSFUL_PAIRING');
             }
-
           });
       }
     },
