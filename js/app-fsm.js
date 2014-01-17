@@ -59,11 +59,12 @@ var appFsm = new machina.Fsm({
     });
 
     self.on('*', function(message, options) {
-
       if(message === 'transition') {
-        Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ', options.action, ' -> ', options.toState );
-      } else {
-        Logger.info('[FSM] ', message, ': ', options);
+        if(options.action) {
+          Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ', options.action, ' -> ', options.toState );
+        } else {
+          Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ', options.toState );
+        }
       }
     });
   },
@@ -77,12 +78,6 @@ var appFsm = new machina.Fsm({
   initialState: 'DEVICE_OFF',
 
   states : {
-
-    'ERROR': {
-      _onEnter: function() {
-       Logger.error('end');
-      }
-    },
 
     'DEVICE_OFF': {
       _onEnter: function() {
@@ -98,58 +93,65 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         appViews.scanning();
 
+        this.handle('getChannelList');
+
+      },
+      'getChannelList': function() {
+        storage.volatile.put('channel_list', [{name: 'BBC1', data:''}, {name:'BBC2', data:''}]);
+
         var self = this;
         setTimeout(function() {
-          storage.volatile.put('channel_list', [{name: 'BBC1', data:''}, {name:'BBC2', data:''}]);
+          if(!storage.volatile.get('channel_list') || storage.volatile.get('channel_list').length === 0) {
+            return error({message: 'Unable to discover any channel'});
+          }
           self.transition('CHANNEL_LIST');
         }, 100);
       }
+
     },
 
     'CHANNEL_LIST': {
       _onEnter: function() {
-        if (storage.volatile.get('channel_list')) {
-          appViews.channelList(storage.volatile.get('channel_list'));
-        } else {
-          return error({message: 'Unable to render channel_list'});
-        }
+        appViews.channelList(storage.volatile.get('channel_list'));
 
         var self = this;
         $('.channel-list>a').click(function() {
-          storage.volatile.put('current_channel', $(this).attr('data-channel'));
-          self.transition('CLIENT_REGISTRATION');
+          self.handle('onChannelClick',  $(this).attr('data-channel'));
         });
+      },
+
+      'onChannelClick': function(channel) {
+        var self = this;
+        storage.volatile.put('current_channel', channel);
+
+        if (storage.persistent.get('client_information')) {
+          // TODO: Check according to the SP.
+          if(storage.persistent.get('access_token')) {
+            self.transition('SUCCESSFUL_PAIRING');
+          } else {
+            self.transition('AUTHORIZATION_INIT');
+          }
+        } else {
+          self.transition('CLIENT_REGISTRATION');
+        }
       }
     },
 
     'CLIENT_REGISTRATION': {
       _onEnter: function() {
-        if (storage.persistent.get('client_information')) {
-          this.transition('AUTHORIZATION_INIT');
-        } else {
-
-          var self = this;
-          cpaProtocol.register('Demo Client', 'cpa-client', 1.0, function(err) {
-            if(err) {
-              return error(err);
-            }
-            self.transition('AUTHORIZATION_INIT');
-          });
-        }
+        var self = this;
+        cpaProtocol.registerClient('Demo Client', 'cpa-client', '1.0.1', function(err, statusCode, body) {
+          if(err) {
+            return error(err);
+          }
+          self.transition('AUTHORIZATION_INIT');
+        });
       }
     },
 
     'AUTHORIZATION_INIT': {
       _onEnter: function() {
         var self = this;
-
-        var access_tokens = storage.persistent.get('access_token');
-
-        if(access_tokens && access_tokens[0]){
-          return this.transition('SUCCESSFUL_PAIRING');
-        } else if(storage.persistent.get('pairing_code')) {
-          return this.transition('AUTHORIZATION_PENDING');
-        }
 
         var clientId = storage.persistent.get('client_information').client_id;
 
@@ -168,10 +170,16 @@ var appFsm = new machina.Fsm({
         var self = this;
         var pairingCode = storage.persistent.get('pairing_code');
         appViews.displayUserCode(pairingCode.user_code, pairingCode.verification_uri);
-        $('#verify_code_btn').click(function() { self.handle('checkUserCode'); });
+        $('#verify_code_btn').click(function() { self.handle('onValidatePairingClick'); });
       },
 
-      'checkUserCode': function() {
+      'onValidatePairingClick': function() {
+        this.transition('AUTHORIZATION_CHECK');
+      }
+    },
+
+    'AUTHORIZATION_CHECK': {
+      _onEnter: function() {
         var self = this;
         var pairingCode = storage.persistent.get('pairing_code');
         var clientInformation = storage.persistent.get('client_information');
@@ -182,6 +190,7 @@ var appFsm = new machina.Fsm({
               self.error(err);
             } else if(authorizationPending) {
               alert('Go to the website');
+              self.transition('AUTHORIZATION_PENDING');
             } else {
               self.transition('SUCCESSFUL_PAIRING');
             }
@@ -191,8 +200,15 @@ var appFsm = new machina.Fsm({
 
     'SUCCESSFUL_PAIRING': {
       _onEnter: function() {
-       var accessTokens = storage.persistent.get('access_token');
-       appViews.successfulPairing(accessTokens[0].token);
+        var accessTokens = storage.persistent.get('access_token');
+        appViews.successfulPairing(accessTokens[0].token);
+      }
+    },
+
+    'ERROR': {
+      _onEnter: function() {
+        Logger.error('end');
+
       }
     }
   }

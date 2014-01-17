@@ -3,35 +3,60 @@
 
 [*] --> DEVICE_OFF
 
+'State declaration
 state DEVICE_OFF
 state SCANNING
 state CHANNEL_LIST
 state CLIENT_REGISTRATION
 state AUTHORIZATION_INIT
+state AUTHORIZATION_PENDING
+state SUCCESSFUL_PAIRING
+state ERROR
+
+
+'State definition
 
 SCANNING: + onEnter: getChannelList
 
 CHANNEL_LIST: +onEnter: displayChannelList
 
-CLIENT_REGISTRATION: + onEnter: requestClientInformation\nPOST /register \n{\n\tclient_name: 'Test client',\n\tsoftware_id: 'CPA AP Test',\n\tsoftware_version: '0.0.1'\n}
+CLIENT_REGISTRATION: + onEnter: registerClient (name, sw_id, sw_version)
+CLIENT_REGISTRATION:  POST /register
+CLIENT_REGISTRATION:  {
+CLIENT_REGISTRATION:  \t client_name: :name,
+CLIENT_REGISTRATION:  \t software_id: :sw_id,
+CLIENT_REGISTRATION:  \t software_version: :sw_version
+CLIENT_REGISTRATION:  }
 
-AUTHORIZATION_INIT: + onEnter: requestUserCode\nPOST /token\nclient_id=:cid&response_type=device_code
-AUTHORIZATION_CHECK: + onEnter: requestAccessToken\nPOST /token\n{\n\tclient_id:cid\n\tgrant_type:'authorization_code'\n\tcode: 'device_code'\n}
+
+AUTHORIZATION_INIT: + onEnter: requestUserCode(client_id)
+AUTHORIZATION_INIT: POST /token
+AUTHORIZATION_INIT: client_id=:client_id&response_type=device_code
 
 
 AUTHORIZATION_PENDING: + onEnter: displayUserCode
+AUTHORIZATION_PENDING:
 
-state AUTHORIZATION_PENDING
-state SUCCESSFUL_PAIRING
-state ERROR
+AUTHORIZATION_CHECK: + onValidatePairingClick: requestAccessToken(client_id)
+AUTHORIZATION_CHECK: POST /token
+AUTHORIZATION_CHECK: {
+AUTHORIZATION_CHECK: \t client_id:client_id
+AUTHORIZATION_CHECK: \t grant_type:'authorization_code'
+AUTHORIZATION_CHECK: \t code: 'device_code'
+AUTHORIZATION_CHECK: }
+
+
+'Transitions
 
 DEVICE_OFF -[#blue]-> DEVICE_ON: switch_on
 DEVICE_ON --> SCANNING
+
 SCANNING --> CHANNEL_LIST: onLoaded
 SCANNING -right-> ERROR: No channel
 
 CHANNEL_LIST -[#blue]-> CLIENT_REGISTRATION: onChannelClick [!isRegistered]
-CHANNEL_LIST -[#blue]-> AUTHORIZATION_INIT: onChannelClick [isRegistered]
+CHANNEL_LIST -[#blue]-> AUTHORIZATION_INIT: onChannelClick [isRegistered && !hasToken]
+CHANNEL_LIST -[#blue]-> SUCCESSFUL_PAIRING: onChannelClick [isRegistered && hasToken]
 
 CLIENT_REGISTRATION --> AUTHORIZATION_INIT: onReply [201 Created]
 CLIENT_REGISTRATION -[#gray]-> ERROR: onReply [*]
@@ -41,11 +66,15 @@ AUTHORIZATION_INIT -[#gray]-> ERROR: onReply [*]
 
 
 AUTHORIZATION_PENDING -[#blue]-> AUTHORIZATION_CHECK: onValidatePairingClick
+
 AUTHORIZATION_CHECK --> SUCCESSFUL_PAIRING: onReply [200 OK, {token}]
 AUTHORIZATION_CHECK --> AUTHORIZATION_PENDING: onReply [400, '{error:authorization_pending}']
 AUTHORIZATION_CHECK -[#gray]-> ERROR: onReply [*]
 
 SUCCESSFUL_PAIRING --> [*]
+
+
+'Legend
 
 legend left
 

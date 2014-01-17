@@ -7,8 +7,13 @@ cpaProtocol.config = {
   authorization_url: 'http://vagrant.ebu.io:3000/token'
 };
 
+/**
+ * Register the client with the Authentatication Provider
 
-cpaProtocol.register = function(clientName, softwareId, softwareVersion, done){
+ * done: function(err, status_code, body) {}
+ *
+ */
+cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, done){
 
   var registrationBody = {
     client_name: clientName,
@@ -28,10 +33,15 @@ cpaProtocol.register = function(clientName, softwareId, softwareVersion, done){
         registration_client_uri: data.registration_client_uri
       });
 
-      done();
+
+      if(jqXHR.status === 201) {
+        done(null, jqXHR.status, data);
+      } else {
+        done(new Error({message: 'wrong status code', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
+      }
 
     }).fail(function( jqXHR, textStatus ) {
-      done(new Error({message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus }));
+      done(new Error({message: 'request failed', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
     });
 };
 
@@ -47,6 +57,11 @@ cpaProtocol.requestUserCode = function(clientId, done) {
         verification_uri: data.verification_uri
       });
 
+      if(jqXHR.status === 200) {
+        done(null, jqXHR.status, data);
+      } else {
+        done(new Error({message: 'wrong status code', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
+      }
       done();
     }).fail(function(jqXHR, textStatus) {
       done(new Error({message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus }));
@@ -74,7 +89,6 @@ cpaProtocol.requestAccessToken = function(clientId, deviceCode, done) {
 
       done(null, false);
     }).fail(function(jqXHR, textStatus) {
-
       if(jqXHR.responseJSON.error === 'authorization_pending') {
         done(null, true);
       } else {
