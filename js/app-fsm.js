@@ -101,7 +101,8 @@ var appFsm = new machina.Fsm({
 
         var self = this;
         setTimeout(function() {
-          if(!storage.volatile.get('channel_list') || storage.volatile.get('channel_list').length === 0) {
+          var channelList = storage.volatile.get('channel_list');
+          if(!channelList || channelList.length === 0) {
             return error({message: 'Unable to discover any channel'});
           }
           self.transition('CHANNEL_LIST');
