@@ -33,7 +33,6 @@ cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, d
         registration_client_uri: data.registration_client_uri
       });
 
-
       if(jqXHR.status === 201) {
         done(null, jqXHR.status, data);
       } else {
@@ -47,7 +46,7 @@ cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, d
 
 cpaProtocol.requestUserCode = function(clientId, done) {
 
-  var body = 'client_id=' + clientId + '&' + 'response_type=device_code';
+  var body = 'client_id=' + clientId + '&response_type=device_code';
 
   requestHelper.postForm(cpaProtocol.config.authorization_url, body)
     .success(function(data, textStatus, jqXHR) {
@@ -65,6 +64,27 @@ cpaProtocol.requestUserCode = function(clientId, done) {
       done();
     }).fail(function(jqXHR, textStatus) {
       done(new Error({message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus }));
+    });
+};
+
+cpaProtocol.requestClientAccessToken = function(clientId, clientSecret, serviceProvider, done) {
+  var body = 'client_id=' + clientId + '&client_secret=' + clientSecret + '&service_provider=' + serviceProvider + '&grant_type=authorization_code';
+  console.log(body);
+  requestHelper.postForm(cpaProtocol.config.authorization_url, body)
+    .success(function(data, textStatus, jqXHR) {
+      Logger.log(data);
+
+      var accessTokens = storage.persistent.get('access_token');
+      if(!accessTokens) {
+        accessTokens = {};
+      }
+
+      accessTokens[0] = data;
+      storage.persistent.put('access_token', accessTokens);
+
+      done(null);
+    }).fail(function(jqXHR, textStatus) {
+      done(new Error({ message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus }));
     });
 };
 
