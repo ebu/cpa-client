@@ -2,6 +2,12 @@
 var requestHelper = {
 
   postJSON: function(url, body){
+
+    Logger.info('Request: POST ' + url);
+    Logger.info('Content-type: application/json');
+    Logger.info('Body: ', body);
+    Logger.info('***********');
+
     return $.ajax({
       type: "POST",
       url: url,
@@ -12,11 +18,32 @@ var requestHelper = {
   },
 
   postForm: function(url, uriEncodedBody) {
+
+    Logger.info('Request: POST ' + url);
+    Logger.info('Content-type: application/x-www-form-urlencoded');
+    Logger.info('Body: ', uriEncodedBody);
+    Logger.info('***********');
+
     return $.ajax({
       type: "POST",
       url: url,
       contentType: 'application/x-www-form-urlencoded',
       data: uriEncodedBody
+    });
+  },
+
+  get: function(url, accessToken) {
+
+    Logger.info('Request: GET ' + url);
+    Logger.info('Authorization: Bearer ' + accessToken);
+    Logger.info('***********');
+
+    return $.ajax({
+      type: "GET",
+      url: url,
+      beforeSend: function (xhr) {
+        xhr.setRequestHeader ("Authorization", "Bearer " + accessToken);
+      }
     });
   }
 };
