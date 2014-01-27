@@ -290,8 +290,8 @@ var appFsm = new machina.Fsm({
         $('#trig-with-btn').click(function(){
           requestHelper.get(config.service_provider_url[serviceProvider] + '/resource', accessToken.token)
             .success(function(data, textStatus, jqXHR) {
-              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): '+ data);
-              alert(data);
+              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
+              alert(data.message);
             })
             .fail(function(jqXHR, textStatus) {
               Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'invalid request');
@@ -303,8 +303,8 @@ var appFsm = new machina.Fsm({
         $('#trig-without-btn').click(function(){
           requestHelper.get(config.service_provider_url[serviceProvider] + '/resource', null)
             .success(function(data, textStatus, jqXHR) {
-              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): '+ data);
-              alert(data);
+              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
+              alert(data.message);
             })
             .fail(function(jqXHR, textStatus) {
               Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'invalid request');
