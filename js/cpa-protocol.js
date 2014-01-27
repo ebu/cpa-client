@@ -3,12 +3,12 @@ var cpaProtocol = {};
 cpaProtocol.registration = {};
 
 cpaProtocol.config = {
-  register_url: 'http://vagrant.ebu.io:3000/register',
-  authorization_url: 'http://vagrant.ebu.io:3000/token'
+  register_url: config.auth_provider_url + '/register',
+  authorization_url: config.auth_provider_url + '/token'
 };
 
 /**
- * Register the client with the Authentatication Provider
+ * Register the client with the Authentication Provider
 
  * done: function(err, status_code, body) {}
  *
