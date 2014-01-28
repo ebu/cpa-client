@@ -3,6 +3,7 @@
 This project contains a reference implementation of a Cross-Platform
 Authentication Client. It consists on a stand-alone javascript client running in a browser.
 
+More information on the EBU Cross-Platform Authentication project : http://tech.ebu.ch/cpa
 
 ## License
 
