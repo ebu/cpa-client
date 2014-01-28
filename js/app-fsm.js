@@ -6,11 +6,6 @@ var appViews = {
     $('#display').html(body);
   },
 
-  scanning: function() {
-    var html = new EJS({url: 'views/scanning.ejs'}).render({});
-    this.switchView('scanning', html);
-  },
-
   deviceOff: function() {
     var html = new EJS({url: 'views/device_off.ejs'}).render({});
     this.switchView('device_off', html);
@@ -23,25 +18,37 @@ var appViews = {
     this.switchView('channel_list', html);
   },
 
-  error: function(errorMessage) {
-    var html = new EJS({url: 'views/error.ejs'}).render({
-      message: errorMessage
-    });
-    this.switchView('error', html);
+  displayModeSelection: function() {
+    var html = new EJS({url: 'views/mode_selection.ejs'}).render({});
+    this.switchView('mode_selection', html);
   },
 
   displayUserCode: function(userCode, verificationUri) {
     var html = new EJS({url: 'views/user_code.ejs'}).render({
       user_code: userCode, verification_uri: verificationUri
     });
-    this.switchView('user code', html);
+    this.switchView('user_code', html);
   },
 
-  successfulPairing: function(accessToken) {
+  displayProgress: function(message) {
+    var html = new EJS({url: 'views/progress.ejs'}).render({
+      'message': message
+    });
+    this.switchView('Progress: '+ message, html);
+  },
+
+  successfulPairing: function(accessToken, mode) {
     var html = new EJS({url: 'views/success.ejs'}).render({
-      message: 'The device is paired. Here is the access token: '+ accessToken
+      message: 'The device is in ' + mode + '. Here is the access token: '+ accessToken
     });
     this.switchView('Device paired', html);
+  },
+
+  error: function(errorMessage) {
+    var html = new EJS({url: 'views/error.ejs'}).render({
+      message: errorMessage
+    });
+    this.switchView('error', html);
   }
 
 };
@@ -55,6 +62,7 @@ var appFsm = new machina.Fsm({
     $('#power_btn').click(function() { self.handle('switch_on'); });
     $('#reset_btn').click(function() {
       storage.reset();
+      Logger.info('**** RESET STORAGE ****');
       self.transition('DEVICE_OFF');
     });
 
@@ -71,7 +79,7 @@ var appFsm = new machina.Fsm({
 
   error: function(err) {
     Logger.error(err);
-    appViews.error({message: err.message});
+    appViews.error(err.message);
     this.transition('ERROR');
   },
 
@@ -91,7 +99,7 @@ var appFsm = new machina.Fsm({
 
     'SCANNING': {
       _onEnter: function() {
-        appViews.scanning();
+        appViews.displayProgress('Scanning...');
 
         this.handle('getChannelList');
 
@@ -108,7 +116,6 @@ var appFsm = new machina.Fsm({
           self.transition('CHANNEL_LIST');
         }, 100);
       }
-
     },
 
     'CHANNEL_LIST': {
@@ -123,14 +130,33 @@ var appFsm = new machina.Fsm({
 
       'onChannelClick': function(channel) {
         var self = this;
+
+
+        var mode = storage.persistent.get('mode');
+        var serviceProvider = channel;
         storage.volatile.put('current_channel', channel);
 
         if (storage.persistent.get('client_information')) {
           // TODO: Check according to the SP.
-          if(storage.persistent.get('access_token')) {
+
+          if(storage.persistent.getValue('access_token', serviceProvider)) {
             self.transition('SUCCESSFUL_PAIRING');
           } else {
-            self.transition('AUTHORIZATION_INIT');
+            var pairingCode = storage.persistent.getValue('pairing_code', serviceProvider);
+            if(mode === 'PAIRING_MODE') {
+              if(!pairingCode) {
+                self.transition('AUTHORIZATION_INIT');
+              } else {
+                self.transition('AUTHORIZATION_PENDING');
+              }
+
+            }
+            else if(mode === 'STANDALONE_MODE') {
+              self.transition('CLIENT_AUTH_INIT');
+            }
+            else {
+              self.transition('MODE_SELECTION');
+            }
           }
         } else {
           self.transition('CLIENT_REGISTRATION');
@@ -140,13 +166,43 @@ var appFsm = new machina.Fsm({
 
     'CLIENT_REGISTRATION': {
       _onEnter: function() {
+        appViews.displayProgress('Client registration');
         var self = this;
+
         cpaProtocol.registerClient('Demo Client', 'cpa-client', '1.0.1', function(err, statusCode, body) {
           if(err) {
             return error(err);
           }
-          self.transition('AUTHORIZATION_INIT');
+          self.transition('MODE_SELECTION');
         });
+      }
+    },
+
+    'MODE_SELECTION': {
+      _onEnter: function() {
+        appViews.displayModeSelection();
+
+        var self = this;
+        $('a.list-group-item').click(function() {
+          self.handle('onModeClick',  $(this).attr('data-mode'));
+        });
+      },
+
+      'onModeClick': function(mode) {
+        var self = this;
+        storage.persistent.put('mode', mode);
+
+        // TODO: Check according to the SP.
+        if(mode === 'PAIRING_MODE') {
+          self.transition('AUTHORIZATION_INIT');
+        }
+        else if(mode === 'STANDALONE_MODE') {
+          self.transition('CLIENT_AUTH_INIT');
+        }
+        else {
+          return error(new Error('Unknown mode'));
+        }
+
       }
     },
 
@@ -155,8 +211,9 @@ var appFsm = new machina.Fsm({
         var self = this;
 
         var clientId = storage.persistent.get('client_information').client_id;
+        var serviceProvider = storage.volatile.get('current_channel');
 
-        cpaProtocol.requestUserCode(clientId, function(err){
+        cpaProtocol.requestUserCode(clientId, serviceProvider, function(err){
           if(err) {
             return self.error(err);
           }
@@ -166,10 +223,32 @@ var appFsm = new machina.Fsm({
       }
     },
 
+
+    'CLIENT_AUTH_INIT': {
+      _onEnter: function() {
+        var self = this;
+
+        var client = storage.persistent.get('client_information');
+        var serviceProvider = storage.volatile.get('current_channel');
+
+        cpaProtocol.requestClientAccessToken(client.client_id,
+          client.client_secret,
+          serviceProvider,
+          function(err){
+            if(err) {
+              return self.error(err);
+            }
+            self.transition('SUCCESSFUL_PAIRING');
+        });
+      }
+    },
+
     'AUTHORIZATION_PENDING': {
       _onEnter: function(){
         var self = this;
-        var pairingCode = storage.persistent.get('pairing_code');
+        var serviceProvider = storage.volatile.get('current_channel');
+        var pairingCode = storage.persistent.getValue('pairing_code', serviceProvider);
+
         appViews.displayUserCode(pairingCode.user_code, pairingCode.verification_uri);
         $('#verify_code_btn').click(function() { self.handle('onValidatePairingClick'); });
       },
@@ -182,11 +261,12 @@ var appFsm = new machina.Fsm({
     'AUTHORIZATION_CHECK': {
       _onEnter: function() {
         var self = this;
-        var pairingCode = storage.persistent.get('pairing_code');
+        var serviceProvider = storage.volatile.get('current_channel');
+        var pairingCode = storage.persistent.getValue('pairing_code', serviceProvider);
         var clientInformation = storage.persistent.get('client_information');
 
         cpaProtocol.requestAccessToken(clientInformation.client_id,
-          pairingCode.device_code, function(err, authorizationPending){
+          pairingCode.device_code, serviceProvider, function(err, authorizationPending){
             if(err) {
               self.error(err);
             } else if(authorizationPending) {
@@ -201,8 +281,36 @@ var appFsm = new machina.Fsm({
 
     'SUCCESSFUL_PAIRING': {
       _onEnter: function() {
-        var accessTokens = storage.persistent.get('access_token');
-        appViews.successfulPairing(accessTokens[0].token);
+        var serviceProvider = storage.volatile.get('current_channel');
+        var accessToken = storage.persistent.getValue('access_token', serviceProvider);
+        var mode = storage.persistent.get('mode');
+
+        appViews.successfulPairing(accessToken.token, mode);
+
+        $('#trig-with-btn').click(function(){
+          requestHelper.get(config.service_provider_url[serviceProvider] + '/resource', accessToken.token)
+            .success(function(data, textStatus, jqXHR) {
+              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
+              alert(data.message);
+            })
+            .fail(function(jqXHR, textStatus) {
+              Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'invalid request');
+              alert('invalid request');
+            });
+        });
+
+
+        $('#trig-without-btn').click(function(){
+          requestHelper.get(config.service_provider_url[serviceProvider] + '/resource', null)
+            .success(function(data, textStatus, jqXHR) {
+              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
+              alert(data.message);
+            })
+            .fail(function(jqXHR, textStatus) {
+              Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'invalid request');
+              alert('invalid request');
+            });
+        });
       }
     },
 
