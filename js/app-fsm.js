@@ -18,8 +18,8 @@ var appViews = {
     this.switchView('channel_list', html);
   },
 
-  displayModeSelection: function() {
-    var html = new EJS({url: 'views/mode_selection.ejs'}).render({});
+  displayModeSelection: function(availableModes) {
+    var html = new EJS({url: 'views/mode_selection.ejs'}).render({availableModes: availableModes});
     this.switchView('mode_selection', html);
   },
 
@@ -180,7 +180,10 @@ var appFsm = new machina.Fsm({
 
     'MODE_SELECTION': {
       _onEnter: function() {
-        appViews.displayModeSelection();
+
+        var availableModes = cpaProtocol.getAvailableMode();
+
+        appViews.displayModeSelection(availableModes);
 
         var self = this;
         $('a.list-group-item').click(function() {

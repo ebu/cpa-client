@@ -1,10 +1,31 @@
 <div class="list-group">
+
+  <% if (availableModes.user == true) { %>
   <a href="#" class="list-group-item" data-mode="PAIRING_MODE">
-    <h4 class="list-group-item-heading">PAIRING MODE</h4>
-    <p class="list-group-item-text">Use an identity to interact with this Service Provider</p>
+    <h4 class="list-group-item-heading">USER MODE</h4>
+    <p class="list-group-item-text">Login and enjoy user personalization</p>
   </a>
+  <% } %>
+
+  <% if (availableModes.client == true) { %>
   <a href="#" class="list-group-item" data-mode="STANDALONE_MODE">
-    <h4 class="list-group-item-heading">STANDALONE MODE</h4>
-    <p class="list-group-item-text">Use the out-of-the-box experience and authorize this device only</p>
+    <h4 class="list-group-item-heading">CLIENT MODE</h4>
+    <p class="list-group-item-text">Enjoy personalization on this device only</p>
   </a>
+  <% } %>
+
+  <% if (availableModes.anonymous == true) { %>
+  <a href="#" class="list-group-item" data-mode="STANDALONE_MODE">
+    <h4 class="list-group-item-heading">ANONYMOUS MODE</h4>
+    <p class="list-group-item-text">No personalization</p>
+  </a>
+  <% } %>
+
+  <% if (availableModes.anonymous == false
+          && availableModes.client == false
+          && availableModes.user == false) { %>
+    <h4 class="list-group-item-heading">This service is not compliant with CPA</h4>
+    <p class="list-group-item-text">Enjoy personalization on this device only</p>
+  <% } %>
+
 </div>

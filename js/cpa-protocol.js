@@ -8,6 +8,14 @@ cpaProtocol.config = {
 };
 
 /**
+ * Discover available modes for a scope
+ */
+
+cpaProtocol.getAvailableMode = function(scope) {
+  return { anonymous: true, client: true, user: true};
+};
+
+/**
  * Register the client with the Authentication Provider
 
  * done: function(err, status_code, body) {}
