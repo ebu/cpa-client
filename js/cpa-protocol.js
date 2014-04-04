@@ -11,8 +11,16 @@ cpaProtocol.config = {
  * Discover available modes for a scope
  */
 
-cpaProtocol.getAvailableMode = function(scope) {
-  return { anonymous: true, client: true, user: true};
+cpaProtocol.getAvailableModes = function(scope, done) {
+
+  requestHelper.getJSON(scope+'tokeninfo')
+    .success(function(data, textStatus, jqXHR) {
+      done(null, { anonymous: true, client: true, user: true});
+    })
+    .fail(function(jqXHR, textStatus) {
+      Logger.error('Unable to discover authentication modes: ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
+      done(new Error({message: 'Unable to discover authentication modes', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
+    });
 };
 
 /**
