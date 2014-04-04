@@ -143,7 +143,7 @@ var appFsm = new machina.Fsm({
             self.transition('SUCCESSFUL_PAIRING');
           } else {
             var pairingCode = storage.persistent.getValue('pairing_code', serviceProvider);
-            if(mode === 'PAIRING_MODE') {
+            if(mode === 'USER_MODE') {
               if(!pairingCode) {
                 self.transition('AUTHORIZATION_INIT');
               } else {
@@ -199,7 +199,7 @@ var appFsm = new machina.Fsm({
         storage.persistent.put('mode', mode);
 
         // TODO: Check according to the SP.
-        if(mode === 'PAIRING_MODE') {
+        if(mode === 'USER_MODE') {
           self.transition('AUTHORIZATION_INIT');
         }
         else if(mode === 'CLIENT_MODE') {
