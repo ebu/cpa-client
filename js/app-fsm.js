@@ -151,7 +151,7 @@ var appFsm = new machina.Fsm({
               }
 
             }
-            else if(mode === 'STANDALONE_MODE') {
+            else if(mode === 'CLIENT_MODE') {
               self.transition('CLIENT_AUTH_INIT');
             }
             else {
@@ -181,9 +181,12 @@ var appFsm = new machina.Fsm({
     'MODE_SELECTION': {
       _onEnter: function() {
 
-        var availableModes = cpaProtocol.getAvailableMode();
-
-        appViews.displayModeSelection(availableModes);
+        cpaProtocol.getAvailableModes('https://sp/', function(err, availableModes) {
+          if(err) {
+            return self.error(err);
+          }
+          appViews.displayModeSelection(availableModes);
+        });
 
         var self = this;
         $('a.list-group-item').click(function() {
@@ -199,7 +202,7 @@ var appFsm = new machina.Fsm({
         if(mode === 'PAIRING_MODE') {
           self.transition('AUTHORIZATION_INIT');
         }
-        else if(mode === 'STANDALONE_MODE') {
+        else if(mode === 'CLIENT_MODE') {
           self.transition('CLIENT_AUTH_INIT');
         }
         else {
