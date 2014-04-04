@@ -9,7 +9,7 @@ state SCANNING
 state CHANNEL_LIST
 state CLIENT_REGISTRATION
 state CLIENT_AUTH_REQUEST
-state PAIRING_MODE
+state MODE_SELECTION
 state AUTHORIZATION_INIT
 state AUTHORIZATION_PENDING
 state SUCCESSFUL_PAIRING
@@ -34,7 +34,7 @@ CLIENT_REGISTRATION:  }
 
 
 
-PAIRING_MODE: displayModeSelection
+MODE_SELECTION: displayModeSelection
 
 CLIENT_AUTH_REQUEST: + onEnter: requestClientAccessToken(client_id, client_secret)
 CLIENT_AUTH_REQUEST: POST /token
@@ -70,11 +70,11 @@ CHANNEL_LIST -[#blue]-> CLIENT_AUTH_REQUEST: onChannelClick [isRegistered(auth_p
 CHANNEL_LIST -[#blue]-> SUCCESSFUL_PAIRING: onChannelClick [isRegistered(auth_provider) &&\n hasToken]
 
 
-CLIENT_REGISTRATION --> PAIRING_MODE: onReply [201]
+CLIENT_REGISTRATION --> MODE_SELECTION: onReply [201]
 CLIENT_REGISTRATION -[#gray]-> ERROR: onReply [*]
 
-PAIRING_MODE -[#blue]-> AUTHORIZATION_INIT: onPairedModeClick
-PAIRING_MODE -[#blue]-> CLIENT_AUTH_REQUEST: onStandAloneModeClick
+MODE_SELECTION -[#blue]-> AUTHORIZATION_INIT: onPairedModeClick
+MODE_SELECTION -[#blue]-> CLIENT_AUTH_REQUEST: onStandAloneModeClick
 
 CLIENT_AUTH_REQUEST --> SUCCESSFUL_PAIRING: onReply [200, {token, token_type=bearer}]
 CLIENT_AUTH_REQUEST -[#gray]-> ERROR: onReply [*]
