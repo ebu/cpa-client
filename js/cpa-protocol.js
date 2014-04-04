@@ -30,9 +30,7 @@ cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, d
 
         storage.persistent.put('client_information', {
           client_id: data.client_id,
-          client_secret: data.client_secret,
-          registration_access_token: data.registration_access_token,
-          registration_client_uri: data.registration_client_uri
+          client_secret: data.client_secret
         });
 
         Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
