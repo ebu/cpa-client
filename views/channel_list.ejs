@@ -1,6 +1,6 @@
 <div class="list-group channel-list">
   <% for(var i=0; i< channels.length; i++) { %>
-  <a href="#" class="list-group-item" data-channel="<%= channels[i].name %>">
+  <a href="#" class="list-group-item" data-channel="<%= channels[i].name %>" data-scope="<%= channels[i].scope %>">
     <h4 class="list-group-item-heading"><%= channels[i].name %></h4>
     <p class="list-group-item-text"><small>IP</small></p>
   </a>

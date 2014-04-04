@@ -13,7 +13,7 @@ cpaProtocol.config = {
 
 cpaProtocol.getAvailableModes = function(scope, done) {
 
-  requestHelper.getJSON(scope+'tokeninfo')
+  requestHelper.get(scope+'tokeninfo')
     .success(function(data, textStatus, jqXHR) {
       done(null, { anonymous: true, client: true, user: true});
     })

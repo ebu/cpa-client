@@ -35,14 +35,15 @@ var requestHelper = {
   get: function(url, accessToken) {
 
     Logger.info('Request: GET ' + url);
-    Logger.info('Authorization: Bearer ' + accessToken);
-    Logger.info('***********');
 
     return $.ajax({
       type: "GET",
       url: url,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader ("Authorization", "Bearer " + accessToken);
+        if (accessToken) {
+          Logger.info('Authorization: Bearer ' + accessToken);
+          xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+        }
       }
     });
   }

@@ -50,7 +50,6 @@ var appViews = {
     });
     this.switchView('error', html);
   }
-
 };
 
 
@@ -105,7 +104,12 @@ var appFsm = new machina.Fsm({
 
       },
       'getChannelList': function() {
-        storage.volatile.put('channel_list', [{name: 'BBC1', data:''}, {name:'BBC2', data:''}]);
+        var channels = [];
+        for(var k in config.scopes) {
+          channels.push({name: k, scope: config.scopes[k]});
+        }
+        
+        storage.volatile.put('channel_list', channels);
 
         var self = this;
         setTimeout(function() {
@@ -124,25 +128,26 @@ var appFsm = new machina.Fsm({
 
         var self = this;
         $('.channel-list>a').click(function() {
-          self.handle('onChannelClick',  $(this).attr('data-channel'));
+          self.handle('onChannelClick',  $(this).attr('data-channel'), $(this).attr('data-scope'));
         });
       },
 
-      'onChannelClick': function(channel) {
+      'onChannelClick': function(channel, scope) {
         var self = this;
 
 
         var mode = storage.persistent.get('mode');
-        var serviceProvider = channel;
+
         storage.volatile.put('current_channel', channel);
+        storage.volatile.put('current_scope', scope);
 
         if (storage.persistent.get('client_information')) {
           // TODO: Check according to the SP.
 
-          if(storage.persistent.getValue('access_token', serviceProvider)) {
+          if(storage.persistent.getValue('access_token', scope)) {
             self.transition('SUCCESSFUL_PAIRING');
           } else {
-            var pairingCode = storage.persistent.getValue('pairing_code', serviceProvider);
+            var pairingCode = storage.persistent.getValue('pairing_code', scope);
             if(mode === 'USER_MODE') {
               if(!pairingCode) {
                 self.transition('AUTHORIZATION_INIT');
@@ -180,8 +185,11 @@ var appFsm = new machina.Fsm({
 
     'MODE_SELECTION': {
       _onEnter: function() {
+        appViews.displayProgress('Service discovery');
 
-        cpaProtocol.getAvailableModes('https://sp/', function(err, availableModes) {
+        var scope = storage.volatile.get('current_scope');
+
+        cpaProtocol.getAvailableModes(scope, function(err, availableModes) {
           if(err) {
             return self.error(err);
           }
@@ -217,9 +225,9 @@ var appFsm = new machina.Fsm({
         var self = this;
 
         var clientId = storage.persistent.get('client_information').client_id;
-        var serviceProvider = storage.volatile.get('current_channel');
+        var scope = storage.volatile.get('current_scope');
 
-        cpaProtocol.requestUserCode(clientId, serviceProvider, function(err){
+        cpaProtocol.requestUserCode(clientId, scope, function(err){
           if(err) {
             return self.error(err);
           }
@@ -229,17 +237,16 @@ var appFsm = new machina.Fsm({
       }
     },
 
-
     'CLIENT_AUTH_INIT': {
       _onEnter: function() {
         var self = this;
 
         var client = storage.persistent.get('client_information');
-        var serviceProvider = storage.volatile.get('current_channel');
+        var scope = storage.volatile.get('current_scope');
 
         cpaProtocol.requestClientAccessToken(client.client_id,
           client.client_secret,
-          serviceProvider,
+          scope,
           function(err){
             if(err) {
               return self.error(err);
@@ -252,8 +259,8 @@ var appFsm = new machina.Fsm({
     'AUTHORIZATION_PENDING': {
       _onEnter: function(){
         var self = this;
-        var serviceProvider = storage.volatile.get('current_channel');
-        var pairingCode = storage.persistent.getValue('pairing_code', serviceProvider);
+        var scope = storage.volatile.get('current_scope');
+        var pairingCode = storage.persistent.getValue('pairing_code', scope);
 
         appViews.displayUserCode(pairingCode.user_code, pairingCode.verification_uri);
         $('#verify_code_btn').click(function() { self.handle('onValidatePairingClick'); });
@@ -267,12 +274,12 @@ var appFsm = new machina.Fsm({
     'AUTHORIZATION_CHECK': {
       _onEnter: function() {
         var self = this;
-        var serviceProvider = storage.volatile.get('current_channel');
-        var pairingCode = storage.persistent.getValue('pairing_code', serviceProvider);
+        var scope = storage.volatile.get('current_scope');
+        var pairingCode = storage.persistent.getValue('pairing_code', scope);
         var clientInformation = storage.persistent.get('client_information');
 
         cpaProtocol.requestAccessToken(clientInformation.client_id,
-          pairingCode.device_code, serviceProvider, function(err, authorizationPending){
+          pairingCode.device_code, scope, function(err, authorizationPending){
             if(err) {
               self.error(err);
             } else if(authorizationPending) {
@@ -287,14 +294,14 @@ var appFsm = new machina.Fsm({
 
     'SUCCESSFUL_PAIRING': {
       _onEnter: function() {
-        var serviceProvider = storage.volatile.get('current_channel');
-        var accessToken = storage.persistent.getValue('access_token', serviceProvider);
+        var scope = storage.volatile.get('current_scope');
+        var accessToken = storage.persistent.getValue('access_token', scope);
         var mode = storage.persistent.get('mode');
 
         appViews.successfulPairing(accessToken.token, mode);
 
         $('#trig-with-btn').click(function(){
-          requestHelper.get(config.service_provider_url[serviceProvider] + '/resource', accessToken.token)
+          requestHelper.get(scope + '/resource', accessToken.token)
             .success(function(data, textStatus, jqXHR) {
               Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
               alert(data.message);
@@ -307,7 +314,7 @@ var appFsm = new machina.Fsm({
 
 
         $('#trig-without-btn').click(function(){
-          requestHelper.get(config.service_provider_url[serviceProvider] + '/resource', null)
+          requestHelper.get(scope + '/resource', null)
             .success(function(data, textStatus, jqXHR) {
               Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
               alert(data.message);
