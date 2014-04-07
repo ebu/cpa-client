@@ -76,6 +76,18 @@ var appFsm = new machina.Fsm({
     });
   },
 
+  getCurrentChannel: function() {
+    var currentChannelName = storage.volatile.get('current_channel');
+    return storage.volatile.getValue('channels', currentChannelName);
+  },
+
+  setCurrentParam: function(param, value) {
+    var currentChannelName = storage.volatile.get('current_channel');
+    var channel = storage.volatile.getValue('channels', currentChannelName);
+    channel[param] = value;
+    storage.volatile.setValue('channels', currentChannelName, channel);
+  },
+
   error: function(err) {
     Logger.error(err);
     appViews.error(err.message);
@@ -110,6 +122,7 @@ var appFsm = new machina.Fsm({
             name: channelName,
             scope: config.scopes[channelName],
             ap_base_url: null,
+            available_modes: {},
             mode: null
           };
 
@@ -130,7 +143,7 @@ var appFsm = new machina.Fsm({
     'CHANNEL_LIST': {
       _onEnter: function() {
         var channels = storage.volatile.get('channels');
-        
+
         var channelArray = [];
         for (var k in channels) {
           channelArray.push(channels[k]);
@@ -147,10 +160,10 @@ var appFsm = new machina.Fsm({
       'onChannelClick': function(channel, scope) {
         var self = this;
 
-        var mode = storage.persistent.get('mode');
-
         storage.volatile.put('current_channel', channel);
-        storage.volatile.put('current_scope', scope);
+
+        var scope = storage.volatile.getValue('channels', channel)['scope'];
+        var mode = storage.volatile.getValue('channels', channel)['mode'];
 
         if (storage.persistent.get('client_information')) {
           // TODO: Check according to the SP.
@@ -189,15 +202,15 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
 
         var self = this;
-        var scope = storage.volatile.get('current_scope');
+        var channel = self.getCurrentChannel();
 
-        cpaProtocol.getAPInfos(scope, function(err, ap_base_url, availableModes) {
+        cpaProtocol.getAPInfos(channel.scope, function(err, ap_base_url, availableModes) {
           if(err) {
             return self.error(err);
           }
-          var current_channel = storage.volatile.get('current_channel');
-
-          appViews.displayModeSelection(availableModes);
+          self.setCurrentParam('ap_base_url', ap_base_url);
+          self.setCurrentParam('available_modes', availableModes);
+          self.transition('CLIENT_REGISTRATION');
         });
       }
     },
