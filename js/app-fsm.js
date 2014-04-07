@@ -219,8 +219,9 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         appViews.displayProgress('Client registration');
         var self = this;
+        var channel = self.getCurrentChannel();
 
-        cpaProtocol.registerClient('Demo Client', 'cpa-client', '1.0.1', function(err, statusCode, body) {
+        cpaProtocol.registerClient(channel.ap_base_url, 'Demo Client', 'cpa-client', '1.0.1', function(err, statusCode, body) {
           if(err) {
             return error(err);
           }

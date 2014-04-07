@@ -18,7 +18,7 @@ cpaProtocol.config = {
  */
 
 cpaProtocol.getAPInfos = function(scope, done) {
-  done(null, 'https://local.ebu.io:8000/', { anonymous: true, client: true, user: true });
+  done(null, 'http://local.ebu.io:8000/', { anonymous: true, client: true, user: true });
 };
 
 /**
@@ -43,7 +43,7 @@ cpaProtocol.getAvailableModes = function(scope, done) {
  * done: function(err, status_code, body) {}
  *
  */
-cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, done){
+cpaProtocol.registerClient = function(ap_base_url, clientName, softwareId, softwareVersion, done){
 
   var registrationBody = {
     client_name: clientName,
@@ -53,7 +53,7 @@ cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, d
 
   Logger.info('CLIENT REGISTRATION');
 
-  requestHelper.postJSON(cpaProtocol.config.register_url, registrationBody)
+  requestHelper.postJSON(ap_base_url + cpaProtocol.config.ap_register_url, registrationBody)
     .success(function(data, textStatus, jqXHR) {
 
       if(jqXHR.status === 201) {
