@@ -1,3 +1,30 @@
+/**
+ * Storage:
+ *  - Persistent:
+ *
+ *      {
+ *        mode: {
+ *          #scopeX:
+ *          ....
+ *        },
+ *        token: {
+ *          #scopeX:
+ *            ...
+ *        },
+ *        client_information: {
+ *          #scopeX: {
+ *            client_id:
+ *            client_secret:
+ *            ....
+ *          }
+ *        }
+ *
+ *      }
+ *
+ *
+ */
+
+
 
 var appViews = {
 
@@ -88,6 +115,30 @@ var appFsm = new machina.Fsm({
     storage.volatile.setValue('channels', currentChannelName, channel);
   },
 
+  setMode: function(scope, mode) {
+    storage.persistent.setValue('mode', scope, mode);
+  },
+
+  getToken: function(scope) {
+    return storage.persistent.getValue('token', scope);
+  },
+
+  setToken: function(scope, mode, token) {
+    token.mode = mode;
+    storage.persistent.setValue('token', scope, token);
+  },
+
+  getClientInformation: function(apBaseUrl) {
+    return storage.persistent.getValue('client_information', apBaseUrl);
+  },
+
+  setClientInformation: function(apBaseUrl, clientId, clientSecret) {
+    storage.persistent.setValue('client_information', apBaseUrl, {
+      client_id: clientId,
+      client_secret: clientSecret
+    });
+  },
+
   error: function(err) {
     Logger.error(err);
     appViews.error(err.message);
@@ -122,8 +173,7 @@ var appFsm = new machina.Fsm({
             name: channelName,
             scope: config.scopes[channelName],
             ap_base_url: null,
-            available_modes: {},
-            mode: null
+            available_modes: {}
           };
 
           storage.volatile.setValue('channels', channelName, channel);
@@ -157,43 +207,37 @@ var appFsm = new machina.Fsm({
         });
       },
 
-      'onChannelClick': function(channel, scope) {
+      'onChannelClick': function(channelName, scope) {
         var self = this;
 
-        storage.volatile.put('current_channel', channel);
+        storage.volatile.put('current_channel', channelName);
+        var channel = self.getCurrentChannel();
 
-        var scope = storage.volatile.getValue('channels', channel)['scope'];
-        var mode = storage.volatile.getValue('channels', channel)['mode'];
+        if (self.getClientInformation(channel.ap_base_url)) {
 
-        if (storage.persistent.get('client_information')) {
-          // TODO: Check according to the SP.
-
-          if(storage.persistent.getValue('access_token', scope)) {
+          if (storage.persistent.getValue('token', channel.scope)) {
             self.transition('SUCCESSFUL_PAIRING');
           } else {
-            var pairingCode = storage.persistent.getValue('pairing_code', scope);
-            if(mode === 'USER_MODE') {
-              if(!pairingCode) {
+            var pairingCode = storage.persistent.getValue('pairing_code', channel.scope);
+            if (mode === 'USER_MODE') {
+              if (!pairingCode) {
                 self.transition('AUTHORIZATION_INIT');
               } else {
                 self.transition('AUTHORIZATION_PENDING');
               }
 
             }
-            else if(mode === 'CLIENT_MODE') {
+            else if (channel.mode === 'CLIENT_MODE') {
               self.transition('CLIENT_AUTH_INIT');
             }
             else {
               self.transition('MODE_SELECTION');
             }
           }
+        } else if (channel.ap_base_url !== null) {
+          self.transition('CLIENT_REGISTRATION');
         } else {
-          if (storage.volatile.get('current_channel')['ap_base_url']) {
-            self.transition('CLIENT_REGISTRATION');
-          } else {
-            self.transition('AP_DISCOVERY');
-          }
-
+          self.transition('AP_DISCOVERY');
         }
       }
     },
@@ -210,6 +254,7 @@ var appFsm = new machina.Fsm({
           }
           self.setCurrentParam('ap_base_url', ap_base_url);
           self.setCurrentParam('available_modes', availableModes);
+
           self.transition('CLIENT_REGISTRATION');
         });
       }
@@ -218,13 +263,17 @@ var appFsm = new machina.Fsm({
     'CLIENT_REGISTRATION': {
       _onEnter: function() {
         appViews.displayProgress('Client registration');
+
         var self = this;
         var channel = self.getCurrentChannel();
 
-        cpaProtocol.registerClient(channel.ap_base_url, 'Demo Client', 'cpa-client', '1.0.2', function(err, statusCode, body) {
+        cpaProtocol.registerClient(channel.ap_base_url, 'Demo Client', 'cpa-client', '1.0.2', function(err, clientId, clientSecret) {
           if(err) {
             return error(err);
           }
+
+          self.setClientInformation(channel.ap_base_url, clientId, clientSecret);
+
           self.transition('MODE_SELECTION');
         });
       }
@@ -232,16 +281,12 @@ var appFsm = new machina.Fsm({
 
     'MODE_SELECTION': {
       _onEnter: function() {
-        appViews.displayProgress('Service discovery');
 
-        var scope = storage.volatile.get('current_scope');
+        var self = this;
+        var channel = self.getCurrentChannel();
 
-        cpaProtocol.getAvailableModes(scope, function(err, availableModes) {
-          if(err) {
-            return self.error(err);
-          }
-          appViews.displayModeSelection(availableModes);
-        });
+        console.log(channel);
+        appViews.displayModeSelection(channel.available_modes);
 
         var self = this;
         $('a.list-group-item').click(function() {
@@ -251,9 +296,12 @@ var appFsm = new machina.Fsm({
 
       'onModeClick': function(mode) {
         var self = this;
-        storage.persistent.put('mode', mode);
 
-        // TODO: Check according to the SP.
+        var channel = self.getCurrentChannel();
+
+        self.setMode(channel.scope, mode);
+
+
         if(mode === 'USER_MODE') {
           self.transition('AUTHORIZATION_INIT');
         }
@@ -261,7 +309,7 @@ var appFsm = new machina.Fsm({
           self.transition('CLIENT_AUTH_INIT');
         }
         else {
-          return error(new Error('Unknown mode'));
+          return self.error(new Error('Unknown mode'));
         }
 
       }
@@ -288,16 +336,18 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         var self = this;
 
-        var client = storage.persistent.get('client_information');
-        var scope = storage.volatile.get('current_scope');
+        var clientInformation = self.getClientInformation(self.getCurrentChannel()['ap_base_url']);
+        var channel = self.getCurrentChannel();
 
-        cpaProtocol.requestClientAccessToken(client.client_id,
-          client.client_secret,
-          scope,
-          function(err){
+        cpaProtocol.requestClientAccessToken(channel.ap_base_url,
+          clientInformation.client_id,
+          clientInformation.client_secret,
+          channel.scope,
+          function(err, clientModeToken){
             if(err) {
               return self.error(err);
             }
+            self.setToken(channel.scope, 'CLIENT_MODE', clientModeToken);
             self.transition('SUCCESSFUL_PAIRING');
         });
       }
@@ -341,14 +391,15 @@ var appFsm = new machina.Fsm({
 
     'SUCCESSFUL_PAIRING': {
       _onEnter: function() {
-        var scope = storage.volatile.get('current_scope');
-        var accessToken = storage.persistent.getValue('access_token', scope);
-        var mode = storage.persistent.get('mode');
+        var self = this;
+        var channel = self.getCurrentChannel();
+        var token = self.getToken(channel.scope);
+        var mode = token.mode;
 
-        appViews.successfulPairing(accessToken.token, mode);
+        appViews.successfulPairing(token.token, mode);
 
         $('#trig-with-btn').click(function(){
-          requestHelper.get(scope + '/resource', accessToken.token)
+          requestHelper.get(channel.scope + 'resource', token.token)
             .success(function(data, textStatus, jqXHR) {
               Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
               alert(data.message);
@@ -361,7 +412,7 @@ var appFsm = new machina.Fsm({
 
 
         $('#trig-without-btn').click(function(){
-          requestHelper.get(scope + '/resource', null)
+          requestHelper.get(channel.scope + 'resource', null)
             .success(function(data, textStatus, jqXHR) {
               Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
               alert(data.message);

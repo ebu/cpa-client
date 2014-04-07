@@ -3,7 +3,6 @@ var cpaProtocol = {};
 cpaProtocol.registration = {};
 
 cpaProtocol.config = {
-
   ap_register_url: 'register',
   ap_token_url: 'token',
   ap_associate_url: 'associate',
@@ -43,7 +42,7 @@ cpaProtocol.getAvailableModes = function(scope, done) {
  * done: function(err, status_code, body) {}
  *
  */
-cpaProtocol.registerClient = function(ap_base_url, clientName, softwareId, softwareVersion, done){
+cpaProtocol.registerClient = function(APBaseUrl, clientName, softwareId, softwareVersion, done){
 
   var registrationBody = {
     client_name: clientName,
@@ -53,19 +52,12 @@ cpaProtocol.registerClient = function(ap_base_url, clientName, softwareId, softw
 
   Logger.info('CLIENT REGISTRATION');
 
-  requestHelper.postJSON(ap_base_url + cpaProtocol.config.ap_register_url, registrationBody)
+  requestHelper.postJSON(APBaseUrl + cpaProtocol.config.ap_register_url, registrationBody)
     .success(function(data, textStatus, jqXHR) {
 
       if(jqXHR.status === 201) {
-
-        storage.persistent.put('client_information', {
-          client_id: data.client_id,
-          client_secret: data.client_secret
-        });
-
         Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-
-        done(null, jqXHR.status, data);
+        done(null, data.client_id, data.client_secret);
       } else {
         Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'wrong status code');
         done(new Error({message: 'wrong status code', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
@@ -108,16 +100,21 @@ cpaProtocol.requestUserCode = function(clientId, serviceProvider, done) {
     });
 };
 
-cpaProtocol.requestClientAccessToken = function(clientId, clientSecret, serviceProvider, done) {
-  var body = 'client_id=' + clientId + '&client_secret=' + clientSecret + '&service_provider=' + serviceProvider + '&grant_type=authorization_code';
+cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecret, scope, done) {
+
+  var body = {
+    grant_type: 'authorization_code',
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: scope
+  };
 
   Logger.info('REQUEST STANDALONE ACCESS TOKEN');
 
-  requestHelper.postForm(cpaProtocol.config.authorization_url, body)
+  requestHelper.postJSON(APBaseUrl + cpaProtocol.config.ap_token_url, body)
     .success(function(data, textStatus, jqXHR) {
       Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-      storage.persistent.setValue('access_token', serviceProvider, data);
-      done(null);
+      done(null, data);
     })
     .fail(function(jqXHR, textStatus) {
       Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');

@@ -5,7 +5,7 @@ var requestHelper = {
 
     Logger.info('Request: POST ' + url);
     Logger.info('Content-type: application/json');
-    Logger.info('Body: ', body);
+    Logger.info('Body: ', JSON.stringify(body));
     Logger.info('***********');
 
     return $.ajax({
