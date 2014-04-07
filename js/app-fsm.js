@@ -11,9 +11,9 @@ var appViews = {
     this.switchView('device_off', html);
   },
 
-  channelList: function(channelList) {
+  channelList: function(channelArray) {
     var html = new EJS({url: 'views/channel_list.ejs'}).render({
-      channels: channelList
+      channels: channelArray
     });
     this.switchView('channel_list', html);
   },
@@ -105,17 +105,22 @@ var appFsm = new machina.Fsm({
       },
       'getChannelList': function() {
         var channels = [];
-        for(var k in config.scopes) {
-          channels.push({name: k, scope: config.scopes[k]});
+        for(var channelName in config.scopes) {
+          var channel = {
+            name: channelName,
+            scope: config.scopes[channelName],
+            ap_base_url: null,
+            mode: null
+          };
+
+          storage.volatile.setValue('channels', channelName, channel);
         }
-        
-        storage.volatile.put('channel_list', channels);
 
         var self = this;
         setTimeout(function() {
-          var channelList = storage.volatile.get('channel_list');
+          var channelList = storage.volatile.get('channels');
           if(!channelList || channelList.length === 0) {
-            return error({message: 'Unable to discover any channel'});
+            return self.error({message: 'Unable to discover any channel'});
           }
           self.transition('CHANNEL_LIST');
         }, 100);
@@ -124,7 +129,14 @@ var appFsm = new machina.Fsm({
 
     'CHANNEL_LIST': {
       _onEnter: function() {
-        appViews.channelList(storage.volatile.get('channel_list'));
+        var channels = storage.volatile.get('channels');
+        
+        var channelArray = [];
+        for (var k in channels) {
+          channelArray.push(channels[k]);
+
+        }
+        appViews.channelList(channelArray);
 
         var self = this;
         $('.channel-list>a').click(function() {
@@ -134,7 +146,6 @@ var appFsm = new machina.Fsm({
 
       'onChannelClick': function(channel, scope) {
         var self = this;
-
 
         var mode = storage.persistent.get('mode');
 
@@ -164,8 +175,30 @@ var appFsm = new machina.Fsm({
             }
           }
         } else {
-          self.transition('CLIENT_REGISTRATION');
+          if (storage.volatile.get('current_channel')['ap_base_url']) {
+            self.transition('CLIENT_REGISTRATION');
+          } else {
+            self.transition('AP_DISCOVERY');
+          }
+
         }
+      }
+    },
+
+    'AP_DISCOVERY': {
+      _onEnter: function() {
+
+        var self = this;
+        var scope = storage.volatile.get('current_scope');
+
+        cpaProtocol.getAPInfos(scope, function(err, ap_base_url, availableModes) {
+          if(err) {
+            return self.error(err);
+          }
+          var current_channel = storage.volatile.get('current_channel');
+
+          appViews.displayModeSelection(availableModes);
+        });
       }
     },
 

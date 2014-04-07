@@ -3,8 +3,22 @@ var cpaProtocol = {};
 cpaProtocol.registration = {};
 
 cpaProtocol.config = {
-  register_url: config.auth_provider_url + '/register',
-  authorization_url: config.auth_provider_url + '/token'
+
+  ap_register_url: 'register',
+  ap_token_url: 'token',
+  ap_associate_url: 'associate',
+  ap__url: 'token',
+
+  sp_tokeninfo_url: 'tokeninfo'
+};
+
+
+/**
+ *  Discover the responsible AP and the available modes for a scope
+ */
+
+cpaProtocol.getAPInfos = function(scope, done) {
+  done(null, 'https://local.ebu.io:8000/', { anonymous: true, client: true, user: true });
 };
 
 /**
@@ -13,9 +27,9 @@ cpaProtocol.config = {
 
 cpaProtocol.getAvailableModes = function(scope, done) {
 
-  requestHelper.get(scope+'tokeninfo')
+  requestHelper.get(scope+cpaProtocol.config.sp_tokeninfo_url)
     .success(function(data, textStatus, jqXHR) {
-      done(null, { anonymous: true, client: true, user: true});
+      done(null, { anonymous: true, client: true, user: true });
     })
     .fail(function(jqXHR, textStatus) {
       Logger.error('Unable to discover authentication modes: ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
