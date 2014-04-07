@@ -12,8 +12,7 @@ var requestHelper = {
       type: "POST",
       url: url,
       data: JSON.stringify(body),
-      contentType: 'application/json',
-      dataType: 'json'
+      contentType: 'application/json'
     });
   },
 

@@ -108,11 +108,20 @@ var appFsm = new machina.Fsm({
     return storage.volatile.getValue('channels', currentChannelName);
   },
 
+  setCurrentChannel: function(channelName) {
+    storage.volatile.put('current_channel', channelName);
+  },
+
   setCurrentParam: function(param, value) {
     var currentChannelName = storage.volatile.get('current_channel');
     var channel = storage.volatile.getValue('channels', currentChannelName);
     channel[param] = value;
     storage.volatile.setValue('channels', currentChannelName, channel);
+  },
+
+
+  getMode: function(scope, mode) {
+    return storage.persistent.getValue('mode', scope);
   },
 
   setMode: function(scope, mode) {
@@ -126,6 +135,21 @@ var appFsm = new machina.Fsm({
   setToken: function(scope, mode, token) {
     token.mode = mode;
     storage.persistent.setValue('token', scope, token);
+  },
+
+  getAssociationCode: function(apBaseUrl) {
+    return storage.persistent.getValue('association_code', apBaseUrl);
+  },
+
+  setAssociationCode: function(apBaseUrl, scope, verificationUrl, deviceCode, userCode, interval, expiresIn) {
+    storage.persistent.setValue('association_code', apBaseUrl, {
+      scope: scope,
+      verification_url: verificationUrl,
+      device_code: deviceCode,
+      user_code: userCode,
+      interval: interval,
+      expires_in: expiresIn
+    });
   },
 
   getClientInformation: function(apBaseUrl) {
@@ -210,29 +234,15 @@ var appFsm = new machina.Fsm({
       'onChannelClick': function(channelName, scope) {
         var self = this;
 
-        storage.volatile.put('current_channel', channelName);
+        self.setCurrentChannel(channelName);
         var channel = self.getCurrentChannel();
 
         if (self.getClientInformation(channel.ap_base_url)) {
 
-          if (storage.persistent.getValue('token', channel.scope)) {
+          if (self.getToken(channel.scope)) {
             self.transition('SUCCESSFUL_PAIRING');
           } else {
-            var pairingCode = storage.persistent.getValue('pairing_code', channel.scope);
-            if (mode === 'USER_MODE') {
-              if (!pairingCode) {
-                self.transition('AUTHORIZATION_INIT');
-              } else {
-                self.transition('AUTHORIZATION_PENDING');
-              }
-
-            }
-            else if (channel.mode === 'CLIENT_MODE') {
-              self.transition('CLIENT_AUTH_INIT');
-            }
-            else {
-              self.transition('MODE_SELECTION');
-            }
+            self.transition('MODE_SELECTION');
           }
         } else if (channel.ap_base_url !== null) {
           self.transition('CLIENT_REGISTRATION');
@@ -248,14 +258,17 @@ var appFsm = new machina.Fsm({
         var self = this;
         var channel = self.getCurrentChannel();
 
-        cpaProtocol.getAPInfos(channel.scope, function(err, ap_base_url, availableModes) {
+        cpaProtocol.getAPInfos(channel.scope, function(err, apBaseUrl, availableModes) {
           if(err) {
             return self.error(err);
           }
-          self.setCurrentParam('ap_base_url', ap_base_url);
+          self.setCurrentParam('ap_base_url', apBaseUrl);
           self.setCurrentParam('available_modes', availableModes);
-
-          self.transition('CLIENT_REGISTRATION');
+          if(self.getClientInformation(apBaseUrl) !== null) {
+            self.transition('MODE_SELECTION');
+          } else {
+            self.transition('CLIENT_REGISTRATION');
+          }
         });
       }
     },
@@ -281,17 +294,29 @@ var appFsm = new machina.Fsm({
 
     'MODE_SELECTION': {
       _onEnter: function() {
-
         var self = this;
         var channel = self.getCurrentChannel();
+        var mode = self.getMode(channel.scope);
+        console.log('MODE', mode);
+        if (self.mode === 'USER_MODE') {
+          var associationCode = self.getAssociationCode(channel.ap_base_url);
+          if (!associationCode) {
+            self.transition('AUTHORIZATION_INIT');
+          } else {
+            self.transition('AUTHORIZATION_PENDING');
+          }
+        }
+        else if (channel.mode === 'CLIENT_MODE') {
+          self.transition('CLIENT_AUTH_INIT');
+        }
+        else {
+          appViews.displayModeSelection(channel.available_modes);
 
-        console.log(channel);
-        appViews.displayModeSelection(channel.available_modes);
-
-        var self = this;
-        $('a.list-group-item').click(function() {
-          self.handle('onModeClick',  $(this).attr('data-mode'));
-        });
+          var self = this;
+          $('a.list-group-item').click(function() {
+            self.handle('onModeClick',  $(this).attr('data-mode'));
+          });
+        }
       },
 
       'onModeClick': function(mode) {
@@ -319,16 +344,35 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         var self = this;
 
-        var clientId = storage.persistent.get('client_information').client_id;
-        var scope = storage.volatile.get('current_scope');
+        var channel = self.getCurrentChannel();
+        var clientInformation = self.getClientInformation(channel.ap_base_url);
+        var associationCode = self.getAssociationCode(channel.ap_base_url);
 
-        cpaProtocol.requestUserCode(clientId, scope, function(err){
-          if(err) {
-            return self.error(err);
-          }
+        if (!associationCode){
+          cpaProtocol.requestUserCode(channel.ap_base_url,
+            clientInformation.client_id,
+            clientInformation.client_secret,
+            channel.scope,
+            function(err, data){
+              if(err) {
+                return self.error(err);
+              }
 
+              self.setAssociationCode(channel.ap_base_url,
+                channel.scope,
+                data.verification_uri,
+                data.device_code,
+                data.user_code,
+                data.interval,
+                data.expires_in
+              );
+
+              self.transition('AUTHORIZATION_PENDING');
+            });
+        } else {
           self.transition('AUTHORIZATION_PENDING');
-        });
+        }
+
       }
     },
 
@@ -336,8 +380,8 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         var self = this;
 
-        var clientInformation = self.getClientInformation(self.getCurrentChannel()['ap_base_url']);
         var channel = self.getCurrentChannel();
+        var clientInformation = self.getClientInformation(channel.ap_base_url);
 
         cpaProtocol.requestClientAccessToken(channel.ap_base_url,
           clientInformation.client_id,
@@ -356,10 +400,11 @@ var appFsm = new machina.Fsm({
     'AUTHORIZATION_PENDING': {
       _onEnter: function(){
         var self = this;
-        var scope = storage.volatile.get('current_scope');
-        var pairingCode = storage.persistent.getValue('pairing_code', scope);
 
-        appViews.displayUserCode(pairingCode.user_code, pairingCode.verification_uri);
+        var channel = self.getCurrentChannel();
+        var associationCode = self.getAssociationCode(channel.ap_base_url);
+        console.log(associationCode);
+        appViews.displayUserCode(associationCode.user_code, associationCode.verification_url);
         $('#verify_code_btn').click(function() { self.handle('onValidatePairingClick'); });
       },
 
@@ -371,18 +416,20 @@ var appFsm = new machina.Fsm({
     'AUTHORIZATION_CHECK': {
       _onEnter: function() {
         var self = this;
-        var scope = storage.volatile.get('current_scope');
-        var pairingCode = storage.persistent.getValue('pairing_code', scope);
-        var clientInformation = storage.persistent.get('client_information');
 
-        cpaProtocol.requestAccessToken(clientInformation.client_id,
-          pairingCode.device_code, scope, function(err, authorizationPending){
+        var channel = self.getCurrentChannel();
+        var associationCode = self.getAssociationCode(channel.ap_base_url);
+        var clientInformation = self.getClientInformation(channel.ap_base_url);
+
+        cpaProtocol.requestUserAccessToken(channel.ap_base_url, clientInformation.client_id, clientInformation.client_secret,
+          associationCode.device_code, channel.scope, function(err, userModeToken){
             if(err) {
               self.error(err);
-            } else if(authorizationPending) {
+            } else if(!userModeToken) {
               alert('Go to the website');
               self.transition('AUTHORIZATION_PENDING');
             } else {
+              self.setToken(channel.scope, 'USER_MODE', userModeToken);
               self.transition('SUCCESSFUL_PAIRING');
             }
           });
@@ -410,7 +457,6 @@ var appFsm = new machina.Fsm({
             });
         });
 
-
         $('#trig-without-btn').click(function(){
           requestHelper.get(channel.scope + 'resource', null)
             .success(function(data, textStatus, jqXHR) {
@@ -428,7 +474,6 @@ var appFsm = new machina.Fsm({
     'ERROR': {
       _onEnter: function() {
         Logger.error('end');
-
       }
     }
   }
