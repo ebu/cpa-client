@@ -71,6 +71,13 @@ var appViews = {
     this.switchView('Device paired', html);
   },
 
+  tag: function(channel) {
+    var html = new EJS({url: 'views/tag.ejs'}).render({
+      message: 'You are listening to: ' + channel.name
+    });
+    this.switchView('Device paired', html);
+  },
+
   error: function(errorMessage) {
     var html = new EJS({url: 'views/error.ejs'}).render({
       message: errorMessage
@@ -245,7 +252,7 @@ var appFsm = new machina.Fsm({
         }
         else {
           if (self.getToken(channel.scope)) {
-            self.transition('SUCCESSFUL_PAIRING');
+            self.transition('TAG');
           } else {
             self.transition('MODE_SELECTION');
           }
@@ -301,7 +308,7 @@ var appFsm = new machina.Fsm({
         console.log('MODE', mode);
         if (mode === 'USER_MODE') {
           if (self.getToken(channel.scope)) {
-            self.transition('SUCCESSFUL_PAIRING');
+            self.transition('TAG');
           } else {
             var associationCode = self.getAssociationCode(channel.ap_base_url);
             if (!associationCode) {
@@ -312,7 +319,11 @@ var appFsm = new machina.Fsm({
           }
         }
         else if (mode === 'CLIENT_MODE') {
-          self.transition('CLIENT_AUTH_INIT');
+          if (self.getToken(channel.scope)) {
+            self.transition('TAG');
+          } else {
+            self.transition('CLIENT_AUTH_INIT');
+          }
         }
         else {
           appViews.displayModeSelection(channel.available_modes);
@@ -450,16 +461,8 @@ var appFsm = new machina.Fsm({
 
         appViews.successfulPairing(token.token, mode);
 
-        $('#trig-with-btn').click(function(){
-          requestHelper.get(channel.scope + 'resource', token.token)
-            .success(function(data, textStatus, jqXHR) {
-              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-              alert(data.message);
-            })
-            .fail(function(jqXHR, textStatus) {
-              Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'invalid request');
-              alert('invalid request');
-            });
+        $('#ok-btn').click(function(){
+          self.transition('TAG');
         });
 
         $('#trig-without-btn').click(function(){
@@ -473,6 +476,36 @@ var appFsm = new machina.Fsm({
               alert('invalid request');
             });
         });
+      }
+    },
+
+    'TAG': {
+      _onEnter: function() {
+        var self = this;
+        var channel = self.getCurrentChannel();
+        var token = self.getToken(channel.scope);
+        var mode = token.mode;
+
+        appViews.tag(channel, mode);
+
+        $('#tag-btn').click(function() {
+          radioTag.tag(token, function(err, title, summary, author, publishedDate) {
+            $('#message-panel').html('<h2>'+title+'</h2><address>'+summary+'</address>')
+          });
+        });
+//
+//        $('#trig-with-btn').click(function(){
+//          requestHelper.get(channel.scope + 'resource', token.token)
+//            .success(function(data, textStatus, jqXHR) {
+//              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
+//              alert(data.message);
+//            })
+//            .fail(function(jqXHR, textStatus) {
+//              Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'invalid request');
+//              alert('invalid request');
+//            });
+//        });
+
       }
     },
 

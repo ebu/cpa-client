@@ -1,7 +1,7 @@
 
 var requestHelper = {
 
-  postJSON: function(url, body){
+  postJSON: function(url, body, accessToken){
 
     Logger.info('Request: POST ' + url);
     Logger.info('Content-type: application/json');
@@ -12,11 +12,17 @@ var requestHelper = {
       type: "POST",
       url: url,
       data: JSON.stringify(body),
-      contentType: 'application/json'
+      contentType: 'application/json',
+      beforeSend: function (xhr) {
+        if (accessToken) {
+          Logger.info('Authorization: Bearer ' + accessToken);
+          xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+        }
+      }
     });
   },
 
-  postForm: function(url, uriEncodedBody) {
+  postForm: function(url, uriEncodedBody, accessToken) {
 
     Logger.info('Request: POST ' + url);
     Logger.info('Content-type: application/x-www-form-urlencoded');
@@ -27,7 +33,13 @@ var requestHelper = {
       type: "POST",
       url: url,
       contentType: 'application/x-www-form-urlencoded',
-      data: uriEncodedBody
+      data: uriEncodedBody,
+      beforeSend: function (xhr) {
+        if (accessToken) {
+          Logger.info('Authorization: Bearer ' + accessToken);
+          xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+        }
+      }
     });
   },
 
