@@ -78,6 +78,13 @@ var appViews = {
     this.switchView('Tags', html);
   },
 
+  listTags: function(channel) {
+    var html = new EJS({url: 'views/tag-list.ejs'}).render({
+      message: 'Tags for channel: ' + channel.name
+    });
+    this.switchView('Tag list', html);
+  },
+
   error: function(errorMessage) {
     var html = new EJS({url: 'views/error.ejs'}).render({
       message: errorMessage
@@ -151,12 +158,13 @@ var appFsm = new machina.Fsm({
     storage.persistent.setValue('token', scope, token);
   },
 
-  getAssociationCode: function(apBaseUrl) {
-    return storage.persistent.getValue('association_code', apBaseUrl);
+  getAssociationCode: function(scope) {
+    return storage.persistent.getValue('association_code', scope);
   },
 
   setAssociationCode: function(apBaseUrl, scope, verificationUrl, deviceCode, userCode, interval, expiresIn) {
-    storage.persistent.setValue('association_code', apBaseUrl, {
+    storage.persistent.setValue('association_code', scope, {
+      ap_base_url: apBaseUrl,
       scope: scope,
       verification_url: verificationUrl,
       device_code: deviceCode,
@@ -178,8 +186,8 @@ var appFsm = new machina.Fsm({
   },
 
   error: function(err) {
-    Logger.error(err);
-    appViews.error(err.message);
+    Logger.error(JSON.stringify(err));
+    appViews.error(JSON.stringify(err));
     this.transition('ERROR');
   },
 
@@ -259,7 +267,7 @@ var appFsm = new machina.Fsm({
         }
         else {
           if (self.getToken(channel.scope)) {
-            self.transition('TAG');
+            self.transition('PLAYER');
           } else {
             self.transition('MODE_SELECTION');
           }
@@ -315,9 +323,9 @@ var appFsm = new machina.Fsm({
         console.log('MODE', mode);
         if (mode === 'USER_MODE') {
           if (self.getToken(channel.scope)) {
-            self.transition('TAG');
+            self.transition('PLAYER');
           } else {
-            var associationCode = self.getAssociationCode(channel.ap_base_url);
+            var associationCode = self.getAssociationCode(channel.scope);
             if (!associationCode) {
               self.transition('AUTHORIZATION_INIT');
             } else {
@@ -327,7 +335,7 @@ var appFsm = new machina.Fsm({
         }
         else if (mode === 'CLIENT_MODE') {
           if (self.getToken(channel.scope)) {
-            self.transition('TAG');
+            self.transition('PLAYER');
           } else {
             self.transition('CLIENT_AUTH_INIT');
           }
@@ -368,8 +376,8 @@ var appFsm = new machina.Fsm({
         var self = this;
 
         var channel = self.getCurrentChannel();
+        var associationCode = self.getAssociationCode(channel.scope);
         var clientInformation = self.getClientInformation(channel.ap_base_url);
-        var associationCode = self.getAssociationCode(channel.ap_base_url);
 
         if (!associationCode){
           cpaProtocol.requestUserCode(channel.ap_base_url,
@@ -425,7 +433,7 @@ var appFsm = new machina.Fsm({
         var self = this;
 
         var channel = self.getCurrentChannel();
-        var associationCode = self.getAssociationCode(channel.ap_base_url);
+        var associationCode = self.getAssociationCode(channel.scope);
         console.log(associationCode);
         appViews.displayUserCode(associationCode.user_code, associationCode.verification_url);
         $('#verify_code_btn').click(function() { self.handle('onValidatePairingClick'); });
@@ -441,7 +449,7 @@ var appFsm = new machina.Fsm({
         var self = this;
 
         var channel = self.getCurrentChannel();
-        var associationCode = self.getAssociationCode(channel.ap_base_url);
+        var associationCode = self.getAssociationCode(channel.scope);
         var clientInformation = self.getClientInformation(channel.ap_base_url);
 
         cpaProtocol.requestUserAccessToken(channel.ap_base_url, clientInformation.client_id, clientInformation.client_secret,
@@ -469,7 +477,7 @@ var appFsm = new machina.Fsm({
         appViews.successfulPairing(token.token, mode);
 
         $('#ok-btn').click(function(){
-          self.transition('TAG');
+          self.transition('PLAYER');
         });
 
         $('#trig-without-btn').click(function(){
@@ -486,7 +494,7 @@ var appFsm = new machina.Fsm({
       }
     },
 
-    'TAG': {
+    'PLAYER': {
       _onEnter: function() {
         var self = this;
         var channel = self.getCurrentChannel();
@@ -496,23 +504,44 @@ var appFsm = new machina.Fsm({
         appViews.tag(channel, mode);
 
         $('#tag-btn').click(function() {
-          radioTag.tag(token, function(err, title, summary, author, publishedDate) {
-            $('#message-panel').html('<h2>'+title+'</h2><address>'+summary+'</address>')
+          radioTag.tag(token, function(err, tag) {
+            if (err) {
+              self.error(err);
+            }
+            $('#message-panel').addClass('alert alert-success').html('<h4>' + tag.title + '</h4><address>' + tag.summary + '</address>')
           });
         });
-//
-//        $('#trig-with-btn').click(function(){
-//          requestHelper.get(channel.scope + 'resource', token.token)
-//            .success(function(data, textStatus, jqXHR) {
-//              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-//              alert(data.message);
-//            })
-//            .fail(function(jqXHR, textStatus) {
-//              Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'invalid request');
-//              alert('invalid request');
-//            });
-//        });
 
+        $('#list-btn').click(function() {
+          self.transition('LIST_TAGS');
+
+        });
+      }
+    },
+
+    'LIST_TAGS': {
+      _onEnter: function() {
+        var self = this;
+        var channel = self.getCurrentChannel();
+        var token = self.getToken(channel.scope);
+        var mode = token.mode;
+
+        appViews.listTags(channel, mode);
+
+        radioTag.listTags(token, function(err, tags) {
+          if(err) {
+            self.error(err);
+          }
+          var htmlOutput = "";
+          for(var t in tags) {
+            htmlOutput += '<li>' + tags[t].title + '</li>'
+          }
+          $('#list').html(htmlOutput);
+        });
+
+        $('#back-btn').click(function() {
+          self.transition('PLAYER');
+        });
       }
     },
 

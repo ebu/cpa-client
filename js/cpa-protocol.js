@@ -85,12 +85,12 @@ cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, scope,
         done(null, data);
       } else {
         Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'wrong status code');
-        done(new Error({message: 'wrong status code', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
+        done({message: 'wrong status code', 'jqXHR': jqXHR});
       }
     })
     .fail(function(jqXHR, textStatus) {
       Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
-      done(new Error({message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus }));
+      done({ message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus });
     });
 };
 
