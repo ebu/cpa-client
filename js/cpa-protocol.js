@@ -26,7 +26,7 @@ cpaProtocol.getAPInfos = function(scope, done) {
 
 cpaProtocol.getAvailableModes = function(scope, done) {
 
-  requestHelper.get(scope+cpaProtocol.config.sp_tokeninfo_url)
+  requestHelper.get(scope + cpaProtocol.config.sp_tokeninfo_url)
     .success(function(data, textStatus, jqXHR) {
       done(null, { anonymous: true, client: true, user: true });
     })

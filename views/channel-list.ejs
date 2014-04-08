@@ -1,8 +1,29 @@
 <div class="list-group channel-list">
   <% for(var i=0; i< channels.length; i++) { %>
   <a href="#" class="list-group-item" data-channel="<%= channels[i].name %>" data-scope="<%= channels[i].scope %>">
+
+    <p class="list-group-item-text" style="float:right"><small>
+
+        <%
+        if (channels[i].mode === 'USER_MODE') {
+        %>
+          <i class="glyphicon glyphicon-link"></i> <i class="glyphicon glyphicon-user"></i> <%= channels[i].mode_description %>
+        <%
+        }
+        else if (channels[i].mode === 'CLIENT_MODE') {
+        %>
+          <i class="glyphicon glyphicon-phone"></i> <%= channels[i].mode_description %>
+        <%
+        }
+        else if (channels[i].mode === 'ANONYMOUS_MODE') {
+        %>
+        <i class="glyphicon glyphicon-globe"></i> Anonymous
+        <%
+        }
+        else { }
+        %>
+      </small></p>
     <h4 class="list-group-item-heading"><%= channels[i].name %></h4>
-    <p class="list-group-item-text"><small>IP</small></p>
   </a>
   <% } %>
 </div>

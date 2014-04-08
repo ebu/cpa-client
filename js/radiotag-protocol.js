@@ -29,9 +29,9 @@ var extractTags = function(xmlData) {
 radioTag.tag = function(token, done) {
   var body = 'station=dab.4fff.etc&time='+new Date().getTime();
 
-  requestHelper.postForm(token.scope + radioTag.config.sp_tag_url, body, token.token)
+  var requestToken = (token.mode === 'ANONYMOUS_MODE') ? null : token.token;
+  requestHelper.postForm(token.scope + radioTag.config.sp_tag_url, body, requestToken)
     .success(function(xmlData) {
-
       var tag = extractTags(xmlData)[0];
 
       done(null, tag);

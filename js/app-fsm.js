@@ -71,11 +71,12 @@ var appViews = {
     this.switchView('Device paired', html);
   },
 
-  tag: function(channel) {
-    var html = new EJS({url: 'views/tag.ejs'}).render({
-      message: 'You are listening to: ' + channel.name
+  player: function(channel, mode) {
+    var html = new EJS({url: 'views/player.ejs'}).render({
+      message: 'You are listening to: ' + channel.name,
+      mode: mode
     });
-    this.switchView('Tags', html);
+    this.switchView('Player', html);
   },
 
   listTags: function(channel) {
@@ -141,7 +142,7 @@ var appFsm = new machina.Fsm({
   },
 
 
-  getMode: function(scope, mode) {
+  getMode: function(scope) {
     return storage.persistent.getValue('mode', scope);
   },
 
@@ -242,7 +243,17 @@ var appFsm = new machina.Fsm({
 
         var channelArray = [];
         for (var k in channels) {
-          channelArray.push(channels[k]);
+          var ch = channels[k];
+
+          var token = this.getToken(ch.scope);
+          if (token) {
+            ch.mode = token.mode;
+            ch.mode_description = token.description;
+          } else {
+            ch.mode = 'none';
+            ch.mode_description = '';
+          }
+          channelArray.push(ch);
 
         }
         appViews.channelList(channelArray);
@@ -320,7 +331,7 @@ var appFsm = new machina.Fsm({
         var self = this;
         var channel = self.getCurrentChannel();
         var mode = self.getMode(channel.scope);
-        console.log('MODE', mode);
+
         if (mode === 'USER_MODE') {
           if (self.getToken(channel.scope)) {
             self.transition('PLAYER');
@@ -338,6 +349,13 @@ var appFsm = new machina.Fsm({
             self.transition('PLAYER');
           } else {
             self.transition('CLIENT_AUTH_INIT');
+          }
+        }
+        else if (mode === 'ANONYMOUS_MODE') {
+          if (self.getToken(channel.scope)) {
+            self.transition('PLAYER');
+          } else {
+            self.transition('ANONYMOUS_INIT');
           }
         }
         else {
@@ -364,6 +382,9 @@ var appFsm = new machina.Fsm({
         else if(mode === 'CLIENT_MODE') {
           self.transition('CLIENT_AUTH_INIT');
         }
+        else if(mode == 'ANONYMOUS_MODE') {
+          self.transition('ANONYMOUS_INIT');
+        }
         else {
           return self.error(new Error('Unknown mode'));
         }
@@ -371,10 +392,28 @@ var appFsm = new machina.Fsm({
       }
     },
 
+    'ANONYMOUS_INIT': {
+      _onEnter: function() {
+        var self = this;
+        var channel = self.getCurrentChannel();
+        var token = {
+          scope: channel.scope,
+          description: 'Anonymous',
+          short_description: 'Anonymous',
+          mode: 'ANONYMOUS_MODE',
+          token: null,
+          token_type: null
+        };
+
+        self.setToken(channel.scope, 'ANONYMOUS_MODE', token);
+
+        self.transition('PLAYER');
+      }
+    },
+
     'AUTHORIZATION_INIT': {
       _onEnter: function() {
         var self = this;
-
         var channel = self.getCurrentChannel();
         var associationCode = self.getAssociationCode(channel.scope);
         var clientInformation = self.getClientInformation(channel.ap_base_url);
@@ -499,22 +538,27 @@ var appFsm = new machina.Fsm({
         var self = this;
         var channel = self.getCurrentChannel();
         var token = self.getToken(channel.scope);
+
         var mode = token.mode;
 
-        appViews.tag(channel, mode);
+        appViews.player(channel, mode);
+
+        if (mode === 'ANONYMOUS_MODE') {
+          $('#tag-history-btn').addClass('disabled');
+        }
+
+        $('#tag-history-btn').click(function() {
+          self.transition('LIST_TAGS');
+        });
 
         $('#tag-btn').click(function() {
           radioTag.tag(token, function(err, tag) {
             if (err) {
               self.error(err);
             }
-            $('#message-panel').addClass('alert alert-success').html('<h4>' + tag.title + '</h4><address>' + tag.summary + '</address>')
+            var body = '<h4>' + tag.title + '</h4><address>' + tag.summary + '</address>';
+            $('#message-panel').addClass('alert alert-success').html(body);
           });
-        });
-
-        $('#list-btn').click(function() {
-          self.transition('LIST_TAGS');
-
         });
       }
     },
