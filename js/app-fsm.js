@@ -92,7 +92,14 @@ var appFsm = new machina.Fsm({
   initialize: function() {
 
     var self = this;
-    $('#power_btn').click(function() { self.handle('switch_on'); });
+    $('#power_btn').click(function() {
+      if (self.state === 'DEVICE_OFF') {
+        self.handle('switch_on');
+      } else {
+        self.transition('DEVICE_OFF');
+      }
+    });
+
     $('#reset_btn').click(function() {
       storage.reset();
       Logger.info('**** RESET STORAGE ****');
