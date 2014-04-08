@@ -237,17 +237,18 @@ var appFsm = new machina.Fsm({
         self.setCurrentChannel(channelName);
         var channel = self.getCurrentChannel();
 
-        if (self.getClientInformation(channel.ap_base_url)) {
-
+        if (!channel.ap_base_url) {
+          self.transition('AP_DISCOVERY');
+        }
+        else if (! self.getClientInformation(channel.ap_base_url)) {
+          self.transition('CLIENT_REGISTRATION');
+        }
+        else {
           if (self.getToken(channel.scope)) {
             self.transition('SUCCESSFUL_PAIRING');
           } else {
             self.transition('MODE_SELECTION');
           }
-        } else if (channel.ap_base_url !== null) {
-          self.transition('CLIENT_REGISTRATION');
-        } else {
-          self.transition('AP_DISCOVERY');
         }
       }
     },
@@ -298,15 +299,19 @@ var appFsm = new machina.Fsm({
         var channel = self.getCurrentChannel();
         var mode = self.getMode(channel.scope);
         console.log('MODE', mode);
-        if (self.mode === 'USER_MODE') {
-          var associationCode = self.getAssociationCode(channel.ap_base_url);
-          if (!associationCode) {
-            self.transition('AUTHORIZATION_INIT');
+        if (mode === 'USER_MODE') {
+          if (self.getToken(channel.scope)) {
+            self.transition('SUCCESSFUL_PAIRING');
           } else {
-            self.transition('AUTHORIZATION_PENDING');
+            var associationCode = self.getAssociationCode(channel.ap_base_url);
+            if (!associationCode) {
+              self.transition('AUTHORIZATION_INIT');
+            } else {
+              self.transition('AUTHORIZATION_PENDING');
+            }
           }
         }
-        else if (channel.mode === 'CLIENT_MODE') {
+        else if (mode === 'CLIENT_MODE') {
           self.transition('CLIENT_AUTH_INIT');
         }
         else {

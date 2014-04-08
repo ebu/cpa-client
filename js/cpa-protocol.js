@@ -70,7 +70,6 @@ cpaProtocol.registerClient = function(APBaseUrl, clientName, softwareId, softwar
 };
 
 cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, scope, done) {
-
   var body = {
     client_id: clientId,
     client_secret: clientSecret,
@@ -82,10 +81,7 @@ cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, scope,
   requestHelper.postJSON(APBaseUrl + cpaProtocol.config.ap_associate_url, body)
     .success(function(data, textStatus, jqXHR) {
       if(jqXHR.status === 200) {
-
         Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-
-
         done(null, data);
       } else {
         Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'wrong status code');
@@ -99,7 +95,6 @@ cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, scope,
 };
 
 cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecret, scope, done) {
-
   var body = {
     grant_type: 'authorization_code',
     client_id: clientId,
@@ -122,7 +117,6 @@ cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecre
 
 
 cpaProtocol.requestUserAccessToken = function(APBaseUrl, clientId, clientSecret, deviceCode, scope, done) {
-
   var body = {
     grant_type: 'authorization_code',
     client_id: clientId,
