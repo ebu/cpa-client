@@ -34,24 +34,24 @@ var appViews = {
   },
 
   deviceOff: function() {
-    var html = new EJS({url: 'views/device_off.ejs'}).render({});
+    var html = new EJS({url: 'views/device-off.ejs'}).render({});
     this.switchView('device_off', html);
   },
 
   channelList: function(channelArray) {
-    var html = new EJS({url: 'views/channel_list.ejs'}).render({
+    var html = new EJS({url: 'views/channel-list.ejs'}).render({
       channels: channelArray
     });
     this.switchView('channel_list', html);
   },
 
   displayModeSelection: function(availableModes) {
-    var html = new EJS({url: 'views/mode_selection.ejs'}).render({availableModes: availableModes});
+    var html = new EJS({url: 'views/mode-selection.ejs'}).render({availableModes: availableModes});
     this.switchView('mode_selection', html);
   },
 
   displayUserCode: function(userCode, verificationUri) {
-    var html = new EJS({url: 'views/user_code.ejs'}).render({
+    var html = new EJS({url: 'views/user-code.ejs'}).render({
       user_code: userCode, verification_uri: verificationUri
     });
     this.switchView('user_code', html);
@@ -75,7 +75,7 @@ var appViews = {
     var html = new EJS({url: 'views/tag.ejs'}).render({
       message: 'You are listening to: ' + channel.name
     });
-    this.switchView('Device paired', html);
+    this.switchView('Tags', html);
   },
 
   error: function(errorMessage) {
