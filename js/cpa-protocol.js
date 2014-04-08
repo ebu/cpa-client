@@ -20,7 +20,7 @@ cpaProtocol.config = {
 cpaProtocol.getServiceInfos = function(scope, done) {
   for (var station_name in config.scopes) {
     if (config.scopes[station_name] === scope) {
-      done(null, 'http://local.ebu.io:8000/', config.modes[station_name]);
+      done(null, config.apBaseUrl, config.modes[station_name]);
       return;
     }
   }
