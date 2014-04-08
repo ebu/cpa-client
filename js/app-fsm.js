@@ -292,7 +292,7 @@ var appFsm = new machina.Fsm({
         var self = this;
         var channel = self.getCurrentChannel();
 
-        cpaProtocol.getAPInfos(channel.scope, function(err, apBaseUrl, availableModes) {
+        cpaProtocol.getServiceInfos(channel.scope, function(err, apBaseUrl, availableModes) {
           if(err) {
             return self.error(err);
           }

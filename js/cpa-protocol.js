@@ -16,8 +16,15 @@ cpaProtocol.config = {
  *  Discover the responsible AP and the available modes for a scope
  */
 
-cpaProtocol.getAPInfos = function(scope, done) {
-  done(null, 'http://local.ebu.io:8000/', { anonymous: true, client: true, user: true });
+
+cpaProtocol.getServiceInfos = function(scope, done) {
+  for (var station_name in config.scopes) {
+    if (config.scopes[station_name] === scope) {
+      done(null, 'http://local.ebu.io:8000/', config.modes[station_name]);
+      return;
+    }
+  }
+  done(new Error('Unable to find available modes for scope : ' + scope));
 };
 
 /**
