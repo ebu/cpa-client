@@ -26,8 +26,8 @@ var extractTags = function(xmlData) {
   return tags;
 };
 
-radioTag.tag = function(token, done) {
-  var body = 'station=dab.4fff.etc&time='+new Date().getTime();
+radioTag.tag = function(channel, token, done) {
+  var body = 'station='+channel.radiodns_id+'&time='+Math.floor(new Date().getTime()/1000);
 
   var requestToken = (token.mode === 'ANONYMOUS_MODE') ? null : token.token;
   requestHelper.postForm(token.scope + radioTag.config.sp_tag_url, body, requestToken)

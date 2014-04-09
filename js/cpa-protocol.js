@@ -6,7 +6,6 @@ cpaProtocol.config = {
   ap_register_url: 'register',
   ap_token_url: 'token',
   ap_associate_url: 'associate',
-  ap__url: 'token',
 
   sp_tokeninfo_url: 'tokeninfo'
 };

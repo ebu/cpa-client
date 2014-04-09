@@ -1,31 +1,3 @@
-/**
- * Storage:
- *  - Persistent:
- *
- *      {
- *        mode: {
- *          #scopeX:
- *          ....
- *        },
- *        token: {
- *          #scopeX:
- *            ...
- *        },
- *        client_information: {
- *          #scopeX: {
- *            client_id:
- *            client_secret:
- *            ....
- *          }
- *        }
- *
- *      }
- *
- *
- */
-
-
-
 var appViews = {
 
   switchView: function(name, body) {
@@ -46,7 +18,8 @@ var appViews = {
   },
 
   displayModeSelection: function(availableModes) {
-    var html = new EJS({url: 'views/mode-selection.ejs'}).render({availableModes: availableModes});
+    var html = new EJS({url: 'views/mode-selection.ejs'})
+      .render({availableModes: availableModes});
     this.switchView('mode_selection', html);
   },
 
@@ -117,9 +90,11 @@ var appFsm = new machina.Fsm({
     self.on('*', function(message, options) {
       if(message === 'transition') {
         if(options.action) {
-          Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ', options.action, ' -> ', options.toState );
+          Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ',
+            options.action, ' -> ', options.toState );
         } else {
-          Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ', options.toState );
+          Logger.debug('[FSM] ', message, ': ', options.fromState, ' -> ',
+            options.toState );
         }
       }
     });
@@ -134,7 +109,7 @@ var appFsm = new machina.Fsm({
     storage.volatile.put('current_channel', channelName);
   },
 
-  setCurrentParam: function(param, value) {
+  setCurrentChannelParam: function(param, value) {
     var currentChannelName = storage.volatile.get('current_channel');
     var channel = storage.volatile.getValue('channels', currentChannelName);
     channel[param] = value;
@@ -163,7 +138,8 @@ var appFsm = new machina.Fsm({
     return storage.persistent.getValue('association_code', scope);
   },
 
-  setAssociationCode: function(apBaseUrl, scope, verificationUrl, deviceCode, userCode, interval, expiresIn) {
+  setAssociationCode: function(apBaseUrl, scope, verificationUrl,
+                               deviceCode, userCode, interval, expiresIn) {
     storage.persistent.setValue('association_code', scope, {
       ap_base_url: apBaseUrl,
       scope: scope,
@@ -219,6 +195,7 @@ var appFsm = new machina.Fsm({
           var channel = {
             name: channelName,
             scope: config.scopes[channelName],
+            radiodns_id: 'dab.ce1.ce15.c221.' + channelName, //dummy
             ap_base_url: null,
             available_modes: {}
           };
@@ -260,7 +237,8 @@ var appFsm = new machina.Fsm({
 
         var self = this;
         $('.channel-list>a').click(function() {
-          self.handle('onChannelClick',  $(this).attr('data-channel'), $(this).attr('data-scope'));
+          self.handle('onChannelClick',  $(this).attr('data-channel'),
+            $(this).attr('data-scope'));
         });
       },
 
@@ -292,12 +270,14 @@ var appFsm = new machina.Fsm({
         var self = this;
         var channel = self.getCurrentChannel();
 
-        cpaProtocol.getServiceInfos(channel.scope, function(err, apBaseUrl, availableModes) {
+        cpaProtocol.getServiceInfos(channel.scope, function(err,
+                                                            apBaseUrl,
+                                                            availableModes) {
           if(err) {
             return self.error(err);
           }
-          self.setCurrentParam('ap_base_url', apBaseUrl);
-          self.setCurrentParam('available_modes', availableModes);
+          self.setCurrentChannelParam('ap_base_url', apBaseUrl);
+          self.setCurrentChannelParam('available_modes', availableModes);
           if(self.getClientInformation(apBaseUrl) !== null) {
             self.transition('MODE_SELECTION');
           } else {
@@ -314,15 +294,18 @@ var appFsm = new machina.Fsm({
         var self = this;
         var channel = self.getCurrentChannel();
 
-        cpaProtocol.registerClient(channel.ap_base_url, 'Demo Client', 'cpa-client', '1.0.2', function(err, clientId, clientSecret) {
-          if(err) {
-            return error(err);
-          }
+        cpaProtocol.registerClient(channel.ap_base_url,
+          'Demo Client',
+          'cpa-client',
+          '1.0.2',
+          function(err, clientId, clientSecret) {
+            if(err) {
+              return error(err);
+            }
 
-          self.setClientInformation(channel.ap_base_url, clientId, clientSecret);
-
-          self.transition('MODE_SELECTION');
-        });
+            self.setClientInformation(channel.ap_base_url, clientId, clientSecret);
+            self.transition('MODE_SELECTION');
+          });
       }
     },
 
@@ -475,7 +458,9 @@ var appFsm = new machina.Fsm({
         var associationCode = self.getAssociationCode(channel.scope);
         console.log(associationCode);
         appViews.displayUserCode(associationCode.user_code, associationCode.verification_url);
-        $('#verify_code_btn').click(function() { self.handle('onValidatePairingClick'); });
+        $('#verify_code_btn').click(function() {
+          self.handle('onValidatePairingClick');
+        });
       },
 
       'onValidatePairingClick': function() {
@@ -491,8 +476,12 @@ var appFsm = new machina.Fsm({
         var associationCode = self.getAssociationCode(channel.scope);
         var clientInformation = self.getClientInformation(channel.ap_base_url);
 
-        cpaProtocol.requestUserAccessToken(channel.ap_base_url, clientInformation.client_id, clientInformation.client_secret,
-          associationCode.device_code, channel.scope, function(err, userModeToken){
+        cpaProtocol.requestUserAccessToken(channel.ap_base_url,
+          clientInformation.client_id,
+          clientInformation.client_secret,
+          associationCode.device_code,
+          channel.scope,
+          function(err, userModeToken){
             if(err) {
               self.error(err);
             } else if(!userModeToken) {
@@ -502,7 +491,8 @@ var appFsm = new machina.Fsm({
               self.setToken(channel.scope, 'USER_MODE', userModeToken);
               self.transition('SUCCESSFUL_PAIRING');
             }
-          });
+          }
+        );
       }
     },
 
@@ -552,7 +542,7 @@ var appFsm = new machina.Fsm({
         });
 
         $('#tag-btn').click(function() {
-          radioTag.tag(token, function(err, tag) {
+          radioTag.tag(channel, token, function(err, tag) {
             if (err) {
               self.error(err);
             }
@@ -578,7 +568,7 @@ var appFsm = new machina.Fsm({
           }
           var htmlOutput = "";
           for(var t in tags) {
-            htmlOutput += '<li>' + tags[t].title + '</li>'
+            htmlOutput += '<li>' + tags[t].title + '</li>';
           }
           $('#list').html(htmlOutput);
         });
