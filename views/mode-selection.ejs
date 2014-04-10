@@ -1,0 +1,31 @@
+<div class="list-group">
+
+  <% if (availableModes.user == true) { %>
+  <a href="#" class="list-group-item" data-mode="USER_MODE">
+    <h4 class="list-group-item-heading">USER MODE</h4>
+    <p class="list-group-item-text">Login and enjoy user personalization</p>
+  </a>
+  <% } %>
+
+  <% if (availableModes.client == true) { %>
+  <a href="#" class="list-group-item" data-mode="CLIENT_MODE">
+    <h4 class="list-group-item-heading">CLIENT MODE</h4>
+    <p class="list-group-item-text">Enjoy personalization on this device only</p>
+  </a>
+  <% } %>
+
+  <% if (availableModes.anonymous == true) { %>
+  <a href="#" class="list-group-item" data-mode="ANONYMOUS_MODE">
+    <h4 class="list-group-item-heading">ANONYMOUS MODE</h4>
+    <p class="list-group-item-text">No personalization</p>
+  </a>
+  <% } %>
+
+  <% if (availableModes.anonymous == false
+          && availableModes.client == false
+          && availableModes.user == false) { %>
+    <h4 class="list-group-item-heading">This service is not compliant with CPA</h4>
+    <p class="list-group-item-text">Enjoy personalization on this device only</p>
+  <% } %>
+
+</div>

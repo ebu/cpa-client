@@ -3,8 +3,43 @@ var cpaProtocol = {};
 cpaProtocol.registration = {};
 
 cpaProtocol.config = {
-  register_url: config.auth_provider_url + '/register',
-  authorization_url: config.auth_provider_url + '/token'
+  ap_register_url: 'register',
+  ap_token_url: 'token',
+  ap_associate_url: 'associate',
+
+  sp_tokeninfo_url: 'tokeninfo'
+};
+
+
+/**
+ *  Discover the responsible AP and the available modes for a scope
+ */
+
+
+cpaProtocol.getServiceInfos = function(scope, done) {
+  for (var station_name in config.scopes) {
+    if (config.scopes[station_name] === scope) {
+      done(null, config.apBaseUrl, config.modes[station_name]);
+      return;
+    }
+  }
+  done(new Error('Unable to find available modes for scope : ' + scope));
+};
+
+/**
+ * Discover available modes for a scope
+ */
+
+cpaProtocol.getAvailableModes = function(scope, done) {
+
+  requestHelper.get(scope + cpaProtocol.config.sp_tokeninfo_url)
+    .success(function(data, textStatus, jqXHR) {
+      done(null, { anonymous: true, client: true, user: true });
+    })
+    .fail(function(jqXHR, textStatus) {
+      Logger.error('Unable to discover authentication modes: ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
+      done(new Error({message: 'Unable to discover authentication modes', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
+    });
 };
 
 /**
@@ -13,7 +48,7 @@ cpaProtocol.config = {
  * done: function(err, status_code, body) {}
  *
  */
-cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, done){
+cpaProtocol.registerClient = function(APBaseUrl, clientName, softwareId, softwareVersion, done){
 
   var registrationBody = {
     client_name: clientName,
@@ -23,21 +58,12 @@ cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, d
 
   Logger.info('CLIENT REGISTRATION');
 
-  requestHelper.postJSON(cpaProtocol.config.register_url, registrationBody)
+  requestHelper.postJSON(APBaseUrl + cpaProtocol.config.ap_register_url, registrationBody)
     .success(function(data, textStatus, jqXHR) {
 
       if(jqXHR.status === 201) {
-
-        storage.persistent.put('client_information', {
-          client_id: data.client_id,
-          client_secret: data.client_secret,
-          registration_access_token: data.registration_access_token,
-          registration_client_uri: data.registration_client_uri
-        });
-
         Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-
-        done(null, jqXHR.status, data);
+        done(null, data.client_id, data.client_secret);
       } else {
         Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'wrong status code');
         done(new Error({message: 'wrong status code', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
@@ -49,47 +75,45 @@ cpaProtocol.registerClient = function(clientName, softwareId, softwareVersion, d
     });
 };
 
-cpaProtocol.requestUserCode = function(clientId, serviceProvider, done) {
-
-  var body = 'client_id=' + clientId + '&service_provider=' + serviceProvider + '&response_type=device_code';
-
+cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, scope, done) {
+  var body = {
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: scope
+  };
 
   Logger.info('REQUEST USER CODE');
 
-  requestHelper.postForm(cpaProtocol.config.authorization_url, body)
+  requestHelper.postJSON(APBaseUrl + cpaProtocol.config.ap_associate_url, body)
     .success(function(data, textStatus, jqXHR) {
       if(jqXHR.status === 200) {
-
         Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-
-        storage.persistent.setValue('pairing_code', serviceProvider, {
-          device_code: data.device_code,
-          user_code: data.user_code,
-          verification_uri: data.verification_uri
-        });
-
-        done(null, jqXHR.status, data);
+        done(null, data);
       } else {
         Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'wrong status code');
-        done(new Error({message: 'wrong status code', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
+        done({message: 'wrong status code', 'jqXHR': jqXHR});
       }
     })
     .fail(function(jqXHR, textStatus) {
       Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
-      done(new Error({message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus }));
+      done({ message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus });
     });
 };
 
-cpaProtocol.requestClientAccessToken = function(clientId, clientSecret, serviceProvider, done) {
-  var body = 'client_id=' + clientId + '&client_secret=' + clientSecret + '&service_provider=' + serviceProvider + '&grant_type=authorization_code';
+cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecret, scope, done) {
+  var body = {
+    grant_type: 'authorization_code',
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: scope
+  };
 
-  Logger.info('REQUEST STANDALONE ACCESS TOKEN');
+  Logger.info('REQUEST CLIENT ACCESS TOKEN');
 
-  requestHelper.postForm(cpaProtocol.config.authorization_url, body)
+  requestHelper.postJSON(APBaseUrl + cpaProtocol.config.ap_token_url, body)
     .success(function(data, textStatus, jqXHR) {
       Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-      storage.persistent.setValue('access_token', serviceProvider, data);
-      done(null);
+      done(null, data);
     })
     .fail(function(jqXHR, textStatus) {
       Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
@@ -98,28 +122,31 @@ cpaProtocol.requestClientAccessToken = function(clientId, clientSecret, serviceP
 };
 
 
-cpaProtocol.requestAccessToken = function(clientId, deviceCode, serviceProvider, done) {
+cpaProtocol.requestUserAccessToken = function(APBaseUrl, clientId, clientSecret, deviceCode, scope, done) {
+  var body = {
+    grant_type: 'authorization_code',
+    client_id: clientId,
+    client_secret: clientSecret,
+    device_code: deviceCode,
+    scope: scope
+  };
 
-  var body = 'client_id=' + clientId + '&code=' + deviceCode + '&grant_type=authorization_code';
+  Logger.info('REQUEST USER ACCESS TOKEN');
 
-  Logger.info('REQUEST ACCESS TOKEN');
-
-  requestHelper.postForm(cpaProtocol.config.authorization_url, body)
+  requestHelper.postJSON(APBaseUrl + cpaProtocol.config.ap_token_url, body)
     .success(function(data, textStatus, jqXHR) {
-      Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-
-      storage.persistent.delete('pairing_code');
-      storage.persistent.setValue('access_token', serviceProvider, data);
-
-      done(null, false);
+      if(jqXHR.status === 202) {
+        Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'authorization_pending');
+        done(null, null);
+      } else {
+        Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
+        done(null, data);
+      }
     })
     .fail(function(jqXHR, textStatus) {
-      if(jqXHR.responseJSON.error === 'authorization_pending') {
-        Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'authorization_pending');
-        done(null, true);
-      } else {
-        Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
-        done(new Error({message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus }), null);
-      }
+
+      Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
+      done(new Error({message: 'request failed', 'jqXHR': jqXHR, 'textStatus': textStatus }), null);
+
     });
 };

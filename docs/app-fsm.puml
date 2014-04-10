@@ -9,7 +9,7 @@ state SCANNING
 state CHANNEL_LIST
 state CLIENT_REGISTRATION
 state CLIENT_AUTH_REQUEST
-state PAIRING_MODE
+state MODE_SELECTION
 state AUTHORIZATION_INIT
 state AUTHORIZATION_PENDING
 state SUCCESSFUL_PAIRING
@@ -21,6 +21,8 @@ state ERROR
 SCANNING: + onEnter: getChannelList
 
 CHANNEL_LIST: +onEnter: displayChannelList
+CHANNEL_LIST: +onExit: Discover auth_provider + scope (ie service_provider_uri)
+
 
 CLIENT_REGISTRATION: + onEnter: registerClient (name, sw_id, sw_version)
 CLIENT_REGISTRATION:  POST /register
@@ -30,15 +32,17 @@ CLIENT_REGISTRATION:  \t software_id: :sw_id,
 CLIENT_REGISTRATION:  \t software_version: :sw_version
 CLIENT_REGISTRATION:  }
 
-PAIRING_MODE: displayModeSelection
+
+
+MODE_SELECTION: displayModeSelection
 
 CLIENT_AUTH_REQUEST: + onEnter: requestClientAccessToken(client_id, client_secret)
 CLIENT_AUTH_REQUEST: POST /token
-CLIENT_AUTH_REQUEST: client_id=:client_id&client_secret=:client_secret&grant_type=authorization_code
+CLIENT_AUTH_REQUEST: client_id=:client_id&client_secret=:client_secret&scope=:scope&grant_type=authorization_code
 
 AUTHORIZATION_INIT: + onEnter: requestUserCode(client_id)
 AUTHORIZATION_INIT: POST /token
-AUTHORIZATION_INIT: client_id=:client_id&response_type=device_code
+AUTHORIZATION_INIT: client_id=:client_id&response_type=device_code&scope=:scope
 
 AUTHORIZATION_PENDING: + onEnter: displayUserCode
 AUTHORIZATION_PENDING:
@@ -60,17 +64,17 @@ DEVICE_ON -[#green]-> SCANNING
 SCANNING -[#green]-> CHANNEL_LIST: onLoaded
 SCANNING -[#gray]right-> ERROR: No channel
 
-CHANNEL_LIST -[#blue]-> CLIENT_REGISTRATION: onChannelClick [!isRegistered]
-CHANNEL_LIST -[#blue]-> AUTHORIZATION_INIT: onChannelClick [isRegistered && !hasToken && pairingMode]
-CHANNEL_LIST -[#blue]-> CLIENT_AUTH_REQUEST: onChannelClick [isRegistered && !hasToken && standAloneMode]
-CHANNEL_LIST -[#blue]-> SUCCESSFUL_PAIRING: onChannelClick [isRegistered && hasToken]
+CHANNEL_LIST -[#blue]-> CLIENT_REGISTRATION: onChannelClick [!isRegistered(auth_provider)]
+CHANNEL_LIST -[#blue]-> AUTHORIZATION_INIT: onChannelClick [isRegistered(auth_provider) &&\n !hasToken(scope) &&\npairingMode]
+CHANNEL_LIST -[#blue]-> CLIENT_AUTH_REQUEST: onChannelClick [isRegistered(auth_provider) &&\n !hasToken &&\nstandAloneMode]
+CHANNEL_LIST -[#blue]-> SUCCESSFUL_PAIRING: onChannelClick [isRegistered(auth_provider) &&\n hasToken]
 
 
-CLIENT_REGISTRATION --> PAIRING_MODE: onReply [201]
+CLIENT_REGISTRATION --> MODE_SELECTION: onReply [201]
 CLIENT_REGISTRATION -[#gray]-> ERROR: onReply [*]
 
-PAIRING_MODE -[#blue]-> AUTHORIZATION_INIT: onPairedModeClick
-PAIRING_MODE -[#blue]-> CLIENT_AUTH_REQUEST: onStandAloneModeClick
+MODE_SELECTION -[#blue]-> AUTHORIZATION_INIT: onPairedModeClick
+MODE_SELECTION -[#blue]-> CLIENT_AUTH_REQUEST: onStandAloneModeClick
 
 CLIENT_AUTH_REQUEST --> SUCCESSFUL_PAIRING: onReply [200, {token, token_type=bearer}]
 CLIENT_AUTH_REQUEST -[#gray]-> ERROR: onReply [*]

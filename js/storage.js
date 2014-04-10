@@ -16,7 +16,7 @@ storage.persistent = {
 
   // Return the value of a stored object
   getValue: function(key, objKey) {
-    obj = this.get(key) || {};
+    var obj = this.get(key) || {};
     if(obj[objKey]) {
       return obj[objKey];
     }
@@ -25,7 +25,7 @@ storage.persistent = {
 
   // Set the value of a stored object
   setValue: function(key, objKey, value) {
-    obj = $.localStorage.get(key) || {};
+    var obj = $.localStorage.get(key) || {};
     obj[objKey] = value;
     this.put(key, obj);
   },
@@ -42,6 +42,22 @@ storage.volatile = {
 
   put: function(key, value) {
     this.data[key] = value;
+  },
+
+  // Return the value of a stored object
+  getValue: function(key, objKey) {
+    var obj = this.get(key) || {};
+    if(obj[objKey]) {
+      return obj[objKey];
+    }
+    return null;
+  },
+
+  // Set the value of a stored object
+  setValue: function(key, objKey, value) {
+    var obj = this.get(key) || {};
+    obj[objKey] = value;
+    this.put(key, obj);
   },
 
   get: function(key) {

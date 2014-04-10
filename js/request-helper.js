@@ -1,11 +1,11 @@
 
 var requestHelper = {
 
-  postJSON: function(url, body){
+  postJSON: function(url, body, accessToken){
 
     Logger.info('Request: POST ' + url);
     Logger.info('Content-type: application/json');
-    Logger.info('Body: ', body);
+    Logger.info('Body: ', JSON.stringify(body));
     Logger.info('***********');
 
     return $.ajax({
@@ -13,11 +13,16 @@ var requestHelper = {
       url: url,
       data: JSON.stringify(body),
       contentType: 'application/json',
-      dataType: 'json'
+      beforeSend: function (xhr) {
+        if (accessToken) {
+          Logger.info('Authorization: Bearer ' + accessToken);
+          xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+        }
+      }
     });
   },
 
-  postForm: function(url, uriEncodedBody) {
+  postForm: function(url, uriEncodedBody, accessToken) {
 
     Logger.info('Request: POST ' + url);
     Logger.info('Content-type: application/x-www-form-urlencoded');
@@ -28,21 +33,28 @@ var requestHelper = {
       type: "POST",
       url: url,
       contentType: 'application/x-www-form-urlencoded',
-      data: uriEncodedBody
+      data: uriEncodedBody,
+      beforeSend: function (xhr) {
+        if (accessToken) {
+          Logger.info('Authorization: Bearer ' + accessToken);
+          xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+        }
+      }
     });
   },
 
   get: function(url, accessToken) {
 
     Logger.info('Request: GET ' + url);
-    Logger.info('Authorization: Bearer ' + accessToken);
-    Logger.info('***********');
 
     return $.ajax({
       type: "GET",
       url: url,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader ("Authorization", "Bearer " + accessToken);
+        if (accessToken) {
+          Logger.info('Authorization: Bearer ' + accessToken);
+          xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+        }
       }
     });
   }
