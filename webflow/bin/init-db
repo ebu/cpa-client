@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+
+"use strict";
+
+/**
+ * Script to initialize database schemas
+ *
+ * Usage: $ NODE_ENV=[development|test] bin/init-db
+ */
+
+switch(process.env.NODE_ENV) {
+  case 'development':
+    console.log('Resetting local database');
+    break;
+
+  case 'test':
+    console.log('Resetting test database');
+    break;
+
+  default:
+    console.error('Unknown environment\r\nUsage: NODE_ENV=[development|test] bin/init-db\r\nExiting...');
+    process.exit(1);
+    break;
+}
+
+var db     = require('../models');
+var config = require('../config');
+
+db.sequelize
+  .sync({ force: true })
+  .complete(function(err) {
+    if (err) {
+      console.log('An error occurred while create the table.');
+    } else {
+      console.log('Synchronization done.');
+    }
+  });
+
