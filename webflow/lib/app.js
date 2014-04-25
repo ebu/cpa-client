@@ -7,6 +7,7 @@
 var express = require('express');
 var path    = require('path');
 var winston = require('winston');
+var passport = require('passport');
 
 var config = require('../config.js');
 var db     = require('../models');
@@ -46,6 +47,28 @@ if (process.env.NODE_ENV !== "test") {
 
   app.use(express.logger({ stream: stream, format: 'dev' }));
 }
+
+
+// Passport
+app.use(express.cookieParser());
+app.use(express.session({ secret: 'LKASDMjnr234n90lasndfsadf' }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Init passport
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  db.User.find(id).then(function(user) {
+      done(null, user);
+    },
+    function(error) {
+      done(error, null);
+    });
+});
+
 
 app.use(express.favicon());
 app.use(express.json());
