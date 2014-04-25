@@ -21,3 +21,14 @@ exports.service_provider = {
   name:   "BBC1",
   scope:  "https://sp.example.com/"
 };
+
+
+
+exports.identity_providers = {
+  github: {
+    enabled: true,
+    client_id: '-',
+    client_secret: '-',
+    callback_url: 'http://local.ebu.io:8000/auth/github/callback'
+  }
+};

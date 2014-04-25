@@ -9,7 +9,7 @@ module.exports = function(sequelize, DataTypes) {
     underscored: true,
 
     associate: function(models) {
-      User.hasMany(models.Task);
+      User.hasMany(models.Token);
     }
   });
 

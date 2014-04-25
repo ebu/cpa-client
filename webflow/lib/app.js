@@ -48,20 +48,25 @@ if (process.env.NODE_ENV !== "test") {
   app.use(express.logger({ stream: stream, format: 'dev' }));
 }
 
+app.use(express.favicon());
+app.use(express.json());
+app.use(express.urlencoded());
 
 // Passport
 app.use(express.cookieParser());
+app.use(express.bodyParser());
 app.use(express.session({ secret: 'LKASDMjnr234n90lasndfsadf' }));
 app.use(passport.initialize());
 app.use(passport.session());
 
 // Init passport
 passport.serializeUser(function(user, done) {
+  console.log('serialize user:'+user.id);
   done(null, user.id);
 });
 
 passport.deserializeUser(function(id, done) {
-  db.User.find(id).then(function(user) {
+  db.User.find({id:id}).success(function(user) {
       done(null, user);
     },
     function(error) {
@@ -69,10 +74,6 @@ passport.deserializeUser(function(id, done) {
     });
 });
 
-
-app.use(express.favicon());
-app.use(express.json());
-app.use(express.urlencoded());
 
 // Routes
 app.use(app.router);

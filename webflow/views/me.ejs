@@ -9,7 +9,10 @@
     <h3 class="panel-title">Links</h3>
   </div>
   <div class="panel-body">
-    <a href="/auth/provider" class="btn btn-warning">Link with CPA</a>
+    <a href="/auth/provider" class="btn btn-warning">Retrieve a token</a>
+    <% tokens.forEach(function(el) { %>
+      <li><%=el.token.substring(0,20)%></li>
+    <% }); %>
   </div>
 </div>
 
