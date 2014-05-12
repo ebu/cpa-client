@@ -79,8 +79,10 @@ passport.deserializeUser(function(id, done) {
 app.use(app.router);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-require('../routes/status')(app);
+require('../routes/auth/cpa')(app);
+require('../routes/auth/github')(app);
 require('../routes/index')(app);
+require('../routes/status')(app);
 
 // development only
 if ('development' === app.get('env')) {
