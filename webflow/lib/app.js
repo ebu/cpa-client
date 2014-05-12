@@ -55,7 +55,7 @@ app.use(express.urlencoded());
 // Passport
 app.use(express.cookieParser());
 app.use(express.bodyParser());
-app.use(express.session({ secret: 'LKASDMjnr234n90lasndfsadf' }));
+app.use(express.session({ secret: 'LKASDMjnr234n90lasndfsadf123' }));
 app.use(passport.initialize());
 app.use(passport.session());
 

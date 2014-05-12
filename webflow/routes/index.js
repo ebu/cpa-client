@@ -43,10 +43,10 @@ module.exports = function(app) {
       });
   });
 
-  var host = 'http://localhost:5000';
-  var authorizationURL = '/dialog/authorize';
-  var tokenURL = '/oauth/token';
-  var client_id = 'abc123';
+  var host = 'http://local1.ebu.io:8001';
+  var authorizationURL = '/authorize';
+  var tokenURL = '/token';
+  var client_id = '1';
   var client_secret = 'ssh-secret';
   var callbackURL = 'http://local.ebu.io:8000/auth/provider/callback';
 
@@ -63,9 +63,16 @@ module.exports = function(app) {
 
   app.get('/auth/provider/callback',
     function(req, res, next) {
+
       if (!req.user) {
         return res.redirect('/test?error');
       }
+
+      var error = req.query.error;
+      if (error) {
+        return res.redirect('/me?error='+encodeURI(error));
+      }
+
       var code = req.query.code;
       var state = req.query.state;
 
@@ -77,25 +84,36 @@ module.exports = function(app) {
         'redirect_uri': callbackURL
       };
 
-      request.post({url: host + tokenURL, 'auth': {
-        'user': client_id,
-        'pass': client_secret,
-        'sendImmediately': false
-      }, form: query}, function(err, response, body) {
-        var data = JSON.parse(body);
+      request.post({url: host + tokenURL,
+          headers: { 'content-type': 'application/json' },
+          'auth': {
+            'user': client_id,
+            'pass': client_secret,
+            'sendImmediately': false
+          },
+          body: JSON.stringify(query)
+        }, function(err, response, body) {
 
-        if (data.access_token && data.token_type && data.token_type === 'bearer') {
-          db.Token.create({domain: 'cpa.local.ebu.io', token: data.access_token }).complete(function(err, token) {
-            db.User.find({id: req.user.id}).success(function(user) {
-              user.addToken(token).success(function(user) {
-                res.redirect('/me?ok');
+          if (err || response.statusCode !== 200) {
+            return next(err);
+          }
+
+          var data = JSON.parse(body);
+
+          if (data.token && data.token_type && data.token_type === 'bearer') {
+            db.Token.create({domain: 'cpa.local.ebu.io', token: data.token })
+              .complete(function(err, token) {
+                db.User.find({id: req.user.id}).success(function(user) {
+                  user.addToken(token).success(function(token) {
+                    res.redirect('/me?ok&token='+token.token);
+                  });
+                });
               });
-            });
-          });
-        } else {
-          next(err);
-        }
-      });
+          }
+          else {
+            next(err);
+          }
+        });
     });
 
   //Github

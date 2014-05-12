@@ -4,6 +4,7 @@ This project contains reference implementations of Cross-Platform
 Authentication clients according to the different flows:
 
 * *Device* It consists on a stand-alone javascript client running in a browser and simulating a device.
+* *WebFlow* WebServer acting as a client
 
 More information on the [EBU Cross-Platform Authentication project](http://tech.ebu.ch/cpa)
 
