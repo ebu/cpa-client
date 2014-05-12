@@ -1,0 +1,23 @@
+<% include layout/head %>
+
+<h1>CPA WebFlow Client</h1>
+
+<h2><%=user.username%></h2>
+
+<div class="panel panel-default">
+
+  <div class="panel-heading">
+    <h3 class="panel-title">Links</h3>
+  </div>
+
+  <div class="panel-body">
+    <a href="/auth/cpa" class="btn btn-warning">Retrieve a token</a>
+
+    <% tokens.forEach(function(el) { %>
+      <li><%=el.token.substring(0,20)%></li>
+    <% }); %>
+  </div>
+
+</div>
+
+<% include layout/foot %>
