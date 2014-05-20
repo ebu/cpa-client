@@ -47,7 +47,7 @@ var validateTokenReply = function(data) {
 
 var requestAccessToken = function(code, next) {
   var query = {
-    'grant_type': 'authorization_code',
+    'grant_type': 'http://tech.ebu.ch/cpa/1.0/authorization_code',
     'code': code,
     'client_id': clientId,
     'redirect_uri': callbackURL
