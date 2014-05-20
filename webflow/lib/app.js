@@ -7,6 +7,7 @@
 var express = require('express');
 var path    = require('path');
 var winston = require('winston');
+var passport = require('passport');
 
 var config = require('../config.js');
 var db     = require('../models');
@@ -51,12 +52,37 @@ app.use(express.favicon());
 app.use(express.json());
 app.use(express.urlencoded());
 
+// Passport
+app.use(express.cookieParser());
+app.use(express.bodyParser());
+app.use(express.session({ secret: 'LKASDMjnr234n90lasndfsadf123' }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Init passport
+passport.serializeUser(function(user, done) {
+  console.log('serialize user:'+user.id);
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  db.User.find({id:id}).success(function(user) {
+      done(null, user);
+    },
+    function(error) {
+      done(error, null);
+    });
+});
+
+
 // Routes
 app.use(app.router);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-require('../routes/status')(app);
+require('../routes/auth/cpa')(app);
+require('../routes/auth/github')(app);
 require('../routes/index')(app);
+require('../routes/status')(app);
 
 // development only
 if ('development' === app.get('env')) {

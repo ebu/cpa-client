@@ -23,7 +23,8 @@
     "async": "~0.2.10",
     "passport": "~0.2.0",
     "passport-oauth2": "~1.1.2",
-    "passport-oauth": "~1.0.0"
+    "passport-oauth": "~1.0.0",
+    "passport-github": "~0.1.5"
   },
   "devDependencies": {
     "supertest": "~0.8.2",
