@@ -1,6 +1,6 @@
 <div class="list-group channel-list">
   <% for(var i=0; i< channels.length; i++) { %>
-  <a href="#" class="list-group-item" data-channel="<%= channels[i].name %>" data-scope="<%= channels[i].scope %>">
+  <a href="#" class="list-group-item" data-channel="<%= channels[i].name %>" data-domain="<%= channels[i].domain %>">
     <p class="list-group-item-text" style="float:right"><small>
         <%
         if (channels[i].mode === 'USER_MODE') {
