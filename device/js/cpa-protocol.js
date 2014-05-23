@@ -102,7 +102,7 @@ cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, scope,
 
 cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecret, scope, done) {
   var body = {
-    grant_type: 'authorization_code',
+    grant_type: 'http://tech.ebu.ch/cpa/1.0/client_credentials',
     client_id: clientId,
     client_secret: clientSecret,
     scope: scope
@@ -124,7 +124,7 @@ cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecre
 
 cpaProtocol.requestUserAccessToken = function(APBaseUrl, clientId, clientSecret, deviceCode, scope, done) {
   var body = {
-    grant_type: 'authorization_code',
+    grant_type: 'http://tech.ebu.ch/cpa/1.0/device_code',
     client_id: clientId,
     client_secret: clientSecret,
     device_code: deviceCode,
