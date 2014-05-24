@@ -503,7 +503,7 @@ var appFsm = new machina.Fsm({
         var token = self.getToken(channel.domain);
         var mode = token.mode;
 
-        appViews.successfulPairing(token.token, mode);
+        appViews.successfulPairing(token.access_token, mode);
 
         $('#ok-btn').click(function(){
           self.transition('PLAYER');
