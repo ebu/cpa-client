@@ -456,14 +456,25 @@ var appFsm = new machina.Fsm({
 
         var channel = self.getCurrentChannel();
         var associationCode = self.getAssociationCode(channel.domain);
-        console.log(associationCode);
+
         appViews.displayUserCode(associationCode.user_code, associationCode.verification_url);
+
         $('#verify_code_btn').click(function() {
           self.handle('onValidatePairingClick');
         });
+
+        this.validatePollTimeout = setTimeout(function() {
+          Logger.info('Polling to validate pairing and retrieve the access token.');
+          self.handle('onValidatePairingClick');
+        }, 5000);
       },
 
       'onValidatePairingClick': function() {
+        if (this.validatePollTimeout) {
+          Logger.debug('Clear polling timeout.');
+          clearTimeout(this.validatePollTimeout);
+        }
+
         this.transition('AUTHORIZATION_CHECK');
       }
     },
@@ -485,9 +496,10 @@ var appFsm = new machina.Fsm({
             if(err) {
               self.error(err);
             } else if(!userModeToken) {
-              alert('Go to the website');
+              Logger.info('Authorization pending.');
               self.transition('AUTHORIZATION_PENDING');
             } else {
+              Logger.info('Authorization granted, saving the access token.');
               self.setToken(channel.domain, 'USER_MODE', userModeToken);
               self.transition('SUCCESSFUL_PAIRING');
             }
