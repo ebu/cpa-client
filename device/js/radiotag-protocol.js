@@ -29,8 +29,8 @@ var extractTags = function(xmlData) {
 radioTag.tag = function(channel, token, done) {
   var body = 'station='+channel.radiodns_id+'&time='+Math.floor(new Date().getTime()/1000);
 
-  var requestToken = (token.mode === 'ANONYMOUS_MODE') ? null : token.token;
-  requestHelper.postForm(token.scope + radioTag.config.sp_tag_url, body, requestToken)
+  var requestToken = (token.mode === 'ANONYMOUS_MODE') ? null : token.access_token;
+  requestHelper.postForm(token.domain + radioTag.config.sp_tag_url, body, requestToken)
     .success(function(xmlData) {
       var tag = extractTags(xmlData)[0];
 
@@ -45,7 +45,7 @@ radioTag.tag = function(channel, token, done) {
 
 
 radioTag.listTags = function(token, done) {
-  requestHelper.get(token.scope + radioTag.config.sp_listtag_url, token.token)
+  requestHelper.get(token.domain + radioTag.config.sp_listtag_url, token.access_token)
     .success(function(xmlData) {
       var tags = extractTags(xmlData);
       done(null, tags);

@@ -117,32 +117,32 @@ var appFsm = new machina.Fsm({
   },
 
 
-  getMode: function(scope) {
-    return storage.persistent.getValue('mode', scope);
+  getMode: function(domain) {
+    return storage.persistent.getValue('mode', domain);
   },
 
-  setMode: function(scope, mode) {
-    storage.persistent.setValue('mode', scope, mode);
+  setMode: function(domain, mode) {
+    storage.persistent.setValue('mode', domain, mode);
   },
 
-  getToken: function(scope) {
-    return storage.persistent.getValue('token', scope);
+  getToken: function(domain) {
+    return storage.persistent.getValue('token', domain);
   },
 
-  setToken: function(scope, mode, token) {
+  setToken: function(domain, mode, token) {
     token.mode = mode;
-    storage.persistent.setValue('token', scope, token);
+    storage.persistent.setValue('token', domain, token);
   },
 
-  getAssociationCode: function(scope) {
-    return storage.persistent.getValue('association_code', scope);
+  getAssociationCode: function(domain) {
+    return storage.persistent.getValue('association_code', domain);
   },
 
-  setAssociationCode: function(apBaseUrl, scope, verificationUrl,
+  setAssociationCode: function(apBaseUrl, domain, verificationUrl,
                                deviceCode, userCode, interval, expiresIn) {
-    storage.persistent.setValue('association_code', scope, {
+    storage.persistent.setValue('association_code', domain, {
       ap_base_url: apBaseUrl,
-      scope: scope,
+      domain: domain,
       verification_url: verificationUrl,
       device_code: deviceCode,
       user_code: userCode,
@@ -191,10 +191,10 @@ var appFsm = new machina.Fsm({
       },
       'getChannelList': function() {
         var channels = [];
-        for(var channelName in config.scopes) {
+        for(var channelName in config.domains) {
           var channel = {
             name: channelName,
-            scope: config.scopes[channelName],
+            domain: config.domains[channelName],
             radiodns_id: 'dab.ce1.ce15.c221.' + channelName, //dummy
             ap_base_url: null,
             available_modes: {}
@@ -222,7 +222,7 @@ var appFsm = new machina.Fsm({
         for (var k in channels) {
           var ch = channels[k];
 
-          var token = this.getToken(ch.scope);
+          var token = this.getToken(ch.domain);
           if (token) {
             ch.mode = token.mode;
             ch.mode_description = token.description;
@@ -238,11 +238,11 @@ var appFsm = new machina.Fsm({
         var self = this;
         $('.channel-list>a').click(function() {
           self.handle('onChannelClick',  $(this).attr('data-channel'),
-            $(this).attr('data-scope'));
+            $(this).attr('data-domain'));
         });
       },
 
-      'onChannelClick': function(channelName, scope) {
+      'onChannelClick': function(channelName, domain) {
         var self = this;
 
         self.setCurrentChannel(channelName);
@@ -255,7 +255,7 @@ var appFsm = new machina.Fsm({
           self.transition('CLIENT_REGISTRATION');
         }
         else {
-          if (self.getToken(channel.scope)) {
+          if (self.getToken(channel.domain)) {
             self.transition('PLAYER');
           } else {
             self.transition('MODE_SELECTION');
@@ -270,7 +270,7 @@ var appFsm = new machina.Fsm({
         var self = this;
         var channel = self.getCurrentChannel();
 
-        cpaProtocol.getServiceInfos(channel.scope, function(err,
+        cpaProtocol.getServiceInfos(channel.domain, function(err,
                                                             apBaseUrl,
                                                             availableModes) {
           if(err) {
@@ -313,13 +313,13 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         var self = this;
         var channel = self.getCurrentChannel();
-        var mode = self.getMode(channel.scope);
+        var mode = self.getMode(channel.domain);
 
         if (mode === 'USER_MODE') {
-          if (self.getToken(channel.scope)) {
+          if (self.getToken(channel.domain)) {
             self.transition('PLAYER');
           } else {
-            var associationCode = self.getAssociationCode(channel.scope);
+            var associationCode = self.getAssociationCode(channel.domain);
             if (!associationCode) {
               self.transition('AUTHORIZATION_INIT');
             } else {
@@ -328,14 +328,14 @@ var appFsm = new machina.Fsm({
           }
         }
         else if (mode === 'CLIENT_MODE') {
-          if (self.getToken(channel.scope)) {
+          if (self.getToken(channel.domain)) {
             self.transition('PLAYER');
           } else {
             self.transition('CLIENT_AUTH_INIT');
           }
         }
         else if (mode === 'ANONYMOUS_MODE') {
-          if (self.getToken(channel.scope)) {
+          if (self.getToken(channel.domain)) {
             self.transition('PLAYER');
           } else {
             self.transition('ANONYMOUS_INIT');
@@ -356,7 +356,7 @@ var appFsm = new machina.Fsm({
 
         var channel = self.getCurrentChannel();
 
-        self.setMode(channel.scope, mode);
+        self.setMode(channel.domain, mode);
 
 
         if(mode === 'USER_MODE') {
@@ -380,7 +380,7 @@ var appFsm = new machina.Fsm({
         var self = this;
         var channel = self.getCurrentChannel();
         var token = {
-          scope: channel.scope,
+          domain: channel.domain,
           description: 'Anonymous',
           short_description: 'Anonymous',
           mode: 'ANONYMOUS_MODE',
@@ -388,7 +388,7 @@ var appFsm = new machina.Fsm({
           token_type: null
         };
 
-        self.setToken(channel.scope, 'ANONYMOUS_MODE', token);
+        self.setToken(channel.domain, 'ANONYMOUS_MODE', token);
 
         self.transition('PLAYER');
       }
@@ -398,21 +398,21 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         var self = this;
         var channel = self.getCurrentChannel();
-        var associationCode = self.getAssociationCode(channel.scope);
+        var associationCode = self.getAssociationCode(channel.domain);
         var clientInformation = self.getClientInformation(channel.ap_base_url);
 
         if (!associationCode){
           cpaProtocol.requestUserCode(channel.ap_base_url,
             clientInformation.client_id,
             clientInformation.client_secret,
-            channel.scope,
+            channel.domain,
             function(err, data){
               if(err) {
                 return self.error(err);
               }
 
               self.setAssociationCode(channel.ap_base_url,
-                channel.scope,
+                channel.domain,
                 data.verification_uri,
                 data.device_code,
                 data.user_code,
@@ -439,12 +439,12 @@ var appFsm = new machina.Fsm({
         cpaProtocol.requestClientAccessToken(channel.ap_base_url,
           clientInformation.client_id,
           clientInformation.client_secret,
-          channel.scope,
+          channel.domain,
           function(err, clientModeToken){
             if(err) {
               return self.error(err);
             }
-            self.setToken(channel.scope, 'CLIENT_MODE', clientModeToken);
+            self.setToken(channel.domain, 'CLIENT_MODE', clientModeToken);
             self.transition('SUCCESSFUL_PAIRING');
         });
       }
@@ -455,15 +455,26 @@ var appFsm = new machina.Fsm({
         var self = this;
 
         var channel = self.getCurrentChannel();
-        var associationCode = self.getAssociationCode(channel.scope);
-        console.log(associationCode);
+        var associationCode = self.getAssociationCode(channel.domain);
+
         appViews.displayUserCode(associationCode.user_code, associationCode.verification_url);
+
         $('#verify_code_btn').click(function() {
           self.handle('onValidatePairingClick');
         });
+
+        this.validatePollTimeout = setTimeout(function() {
+          Logger.info('Polling to validate pairing and retrieve the access token.');
+          self.handle('onValidatePairingClick');
+        }, 5000);
       },
 
       'onValidatePairingClick': function() {
+        if (this.validatePollTimeout) {
+          Logger.debug('Clear polling timeout.');
+          clearTimeout(this.validatePollTimeout);
+        }
+
         this.transition('AUTHORIZATION_CHECK');
       }
     },
@@ -473,22 +484,23 @@ var appFsm = new machina.Fsm({
         var self = this;
 
         var channel = self.getCurrentChannel();
-        var associationCode = self.getAssociationCode(channel.scope);
+        var associationCode = self.getAssociationCode(channel.domain);
         var clientInformation = self.getClientInformation(channel.ap_base_url);
 
         cpaProtocol.requestUserAccessToken(channel.ap_base_url,
           clientInformation.client_id,
           clientInformation.client_secret,
           associationCode.device_code,
-          channel.scope,
+          channel.domain,
           function(err, userModeToken){
             if(err) {
               self.error(err);
             } else if(!userModeToken) {
-              alert('Go to the website');
+              Logger.info('Authorization pending.');
               self.transition('AUTHORIZATION_PENDING');
             } else {
-              self.setToken(channel.scope, 'USER_MODE', userModeToken);
+              Logger.info('Authorization granted, saving the access token.');
+              self.setToken(channel.domain, 'USER_MODE', userModeToken);
               self.transition('SUCCESSFUL_PAIRING');
             }
           }
@@ -500,17 +512,17 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         var self = this;
         var channel = self.getCurrentChannel();
-        var token = self.getToken(channel.scope);
+        var token = self.getToken(channel.domain);
         var mode = token.mode;
 
-        appViews.successfulPairing(token.token, mode);
+        appViews.successfulPairing(token.access_token, mode);
 
         $('#ok-btn').click(function(){
           self.transition('PLAYER');
         });
 
         $('#trig-without-btn').click(function(){
-          requestHelper.get(channel.scope + 'resource', null)
+          requestHelper.get(channel.domain + 'resource', null)
             .success(function(data, textStatus, jqXHR) {
               Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
               alert(data.message);
@@ -527,7 +539,7 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         var self = this;
         var channel = self.getCurrentChannel();
-        var token = self.getToken(channel.scope);
+        var token = self.getToken(channel.domain);
 
         var mode = token.mode;
 
@@ -557,7 +569,7 @@ var appFsm = new machina.Fsm({
       _onEnter: function() {
         var self = this;
         var channel = self.getCurrentChannel();
-        var token = self.getToken(channel.scope);
+        var token = self.getToken(channel.domain);
         var mode = token.mode;
 
         appViews.listTags(channel, mode);

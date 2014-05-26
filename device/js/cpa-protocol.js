@@ -6,33 +6,32 @@ cpaProtocol.config = {
   ap_register_url: 'register',
   ap_token_url: 'token',
   ap_associate_url: 'associate',
-
   sp_tokeninfo_url: 'tokeninfo'
 };
 
 
 /**
- *  Discover the responsible AP and the available modes for a scope
+ *  Discover the responsible AP and the available modes for a domain
  */
 
 
-cpaProtocol.getServiceInfos = function(scope, done) {
-  for (var station_name in config.scopes) {
-    if (config.scopes[station_name] === scope) {
+cpaProtocol.getServiceInfos = function(domain, done) {
+  for (var station_name in config.domains) {
+    if (config.domains[station_name] === domain) {
       done(null, config.apBaseUrl, config.modes[station_name]);
       return;
     }
   }
-  done(new Error('Unable to find available modes for scope : ' + scope));
+  done(new Error('Unable to find available modes for domain : ' + domain));
 };
 
 /**
- * Discover available modes for a scope
+ * Discover available modes for a domain
  */
 
-cpaProtocol.getAvailableModes = function(scope, done) {
+cpaProtocol.getAvailableModes = function(domain, done) {
 
-  requestHelper.get(scope + cpaProtocol.config.sp_tokeninfo_url)
+  requestHelper.get(domain + cpaProtocol.config.sp_tokeninfo_url)
     .success(function(data, textStatus, jqXHR) {
       done(null, { anonymous: true, client: true, user: true });
     })
@@ -75,11 +74,11 @@ cpaProtocol.registerClient = function(APBaseUrl, clientName, softwareId, softwar
     });
 };
 
-cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, scope, done) {
+cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, domain, done) {
   var body = {
     client_id: clientId,
     client_secret: clientSecret,
-    scope: scope
+    domain: domain
   };
 
   Logger.info('REQUEST USER CODE');
@@ -100,12 +99,12 @@ cpaProtocol.requestUserCode = function(APBaseUrl, clientId, clientSecret, scope,
     });
 };
 
-cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecret, scope, done) {
+cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecret, domain, done) {
   var body = {
-    grant_type: 'authorization_code',
+    grant_type: 'http://tech.ebu.ch/cpa/1.0/client_credentials',
     client_id: clientId,
     client_secret: clientSecret,
-    scope: scope
+    domain: domain
   };
 
   Logger.info('REQUEST CLIENT ACCESS TOKEN');
@@ -122,13 +121,13 @@ cpaProtocol.requestClientAccessToken = function(APBaseUrl, clientId, clientSecre
 };
 
 
-cpaProtocol.requestUserAccessToken = function(APBaseUrl, clientId, clientSecret, deviceCode, scope, done) {
+cpaProtocol.requestUserAccessToken = function(APBaseUrl, clientId, clientSecret, deviceCode, domain, done) {
   var body = {
-    grant_type: 'authorization_code',
+    grant_type: 'http://tech.ebu.ch/cpa/1.0/device_code',
     client_id: clientId,
     client_secret: clientSecret,
     device_code: deviceCode,
-    scope: scope
+    domain: domain
   };
 
   Logger.info('REQUEST USER ACCESS TOKEN');
