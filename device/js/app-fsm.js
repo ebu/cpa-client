@@ -6,7 +6,15 @@ var appViews = {
   },
 
   deviceOff: function() {
-    var html = new EJS({url: 'views/device-off.ejs'}).render({});
+    var now = new Date();
+
+    var html = new EJS({
+      url: 'views/device-off.ejs'
+    }).render({
+      day:  $.format.date(now, 'ddd'),
+      date: $.format.date(now, 'dd MMM yyyy'),
+      time: $.format.date(now, 'hh:m')
+      });
     this.switchView('device_off', html);
   },
 
@@ -37,10 +45,28 @@ var appViews = {
     this.switchView('Progress: '+ message, html);
   },
 
-  successfulPairing: function(accessToken, mode) {
-    var html = new EJS({url: 'views/success.ejs'}).render({
-      message: 'The device is in ' + mode + '. Here is the access token: '+ accessToken
-    });
+  successfulPairing: function(accessToken, mode, domainDisplayName, userName) {
+    var message = { title: '', accessToken: ''};
+    if (!userName) {
+      message = {
+        title: '<strong>This is the unique identifier for your device on ' +
+          domainDisplayName + '</strong>',
+
+        accessToken: accessToken.substr(0, 20) + '<br>' +
+          accessToken.substr(20, 50) + '<br>'
+      };
+    } else {
+      message = {
+        title: '<strong>This is the unique identifier for ' + userName + '\'s ' +
+          'device on ' + domainDisplayName + '</strong>',
+
+        accessToken: accessToken.substr(0, 20) + '<br>' +
+          accessToken.substr(20, 50) + '<br>'
+      };
+    }
+
+
+    var html = new EJS({url: 'views/success.ejs'}).render(message);
     this.switchView('Device paired', html);
   },
 
@@ -516,7 +542,7 @@ var appFsm = new machina.Fsm({
         var token = self.getToken(channel.domain);
         var mode = token.mode;
 
-        appViews.successfulPairing(token.access_token, mode);
+        appViews.successfulPairing(token.access_token, mode, token.domain_display_name, token.user_name);
 
         $('#ok-btn').click(function(){
           self.transition('PLAYER');
@@ -559,7 +585,7 @@ var appFsm = new machina.Fsm({
             if (err) {
               self.error(err);
             }
-            var body = '<h4>' + tag.title + '</h4><address>' + tag.summary + '</address>';
+            var body = '<strong>' + tag.title + '</strong>';
             $('#message-panel').addClass('alert alert-success').html(body);
           });
         });
