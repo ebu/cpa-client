@@ -130,6 +130,7 @@ var appFsm = new machina.Fsm({
   },
 
   setToken: function(domain, mode, token) {
+    console.log('USER token: ', token);
     token.mode = mode;
     storage.persistent.setValue('token', domain, token);
   },
@@ -225,10 +226,10 @@ var appFsm = new machina.Fsm({
           var token = this.getToken(ch.domain);
           if (token) {
             ch.mode = token.mode;
-            ch.mode_description = token.description;
+            ch.mode_description = (token.user_name)? token.user_name : 'This device';
           } else {
-            ch.mode = 'none';
-            ch.mode_description = '';
+            ch.mode = null;
+            ch.mode_description = null;
           }
           channelArray.push(ch);
 
@@ -248,7 +249,7 @@ var appFsm = new machina.Fsm({
         self.setCurrentChannel(channelName);
         var channel = self.getCurrentChannel();
 
-        if (!channel.ap_base_url) {
+        if (! channel.ap_base_url) {
           self.transition('AP_DISCOVERY');
         }
         else if (! self.getClientInformation(channel.ap_base_url)) {
@@ -381,8 +382,8 @@ var appFsm = new machina.Fsm({
         var channel = self.getCurrentChannel();
         var token = {
           domain: channel.domain,
-          description: 'Anonymous',
-          short_description: 'Anonymous',
+          domain_display_name: channel.name,
+          user_name: 'Anonymous',
           mode: 'ANONYMOUS_MODE',
           token: null,
           token_type: null
