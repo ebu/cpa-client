@@ -142,7 +142,6 @@ var appFsm = new machina.Fsm({
     storage.volatile.setValue('channels', currentChannelName, channel);
   },
 
-
   getMode: function(domain) {
     return storage.persistent.getValue('mode', domain);
   },
@@ -156,7 +155,6 @@ var appFsm = new machina.Fsm({
   },
 
   setToken: function(domain, mode, token) {
-    console.log('USER token: ', token);
     token.mode = mode;
     storage.persistent.setValue('token', domain, token);
   },
@@ -234,7 +232,7 @@ var appFsm = new machina.Fsm({
         setTimeout(function() {
           var channelList = storage.volatile.get('channels');
           if(!channelList || channelList.length === 0) {
-            return self.error({message: 'Unable to discover any channel'});
+            return self.error({ message: 'Unable to discover any channel' });
           }
           self.transition('CHANNEL_LIST');
         }, 100);
@@ -293,24 +291,26 @@ var appFsm = new machina.Fsm({
 
     'AP_DISCOVERY': {
       _onEnter: function() {
+        appViews.displayProgress('Discovering the Authorization Provider and available modes');
 
         var self = this;
         var channel = self.getCurrentChannel();
 
-        cpaProtocol.getServiceInfos(channel.domain, function(err,
-                                                            apBaseUrl,
-                                                            availableModes) {
-          if(err) {
-            return self.error(err);
-          }
-          self.setCurrentChannelParam('ap_base_url', apBaseUrl);
-          self.setCurrentChannelParam('available_modes', availableModes);
-          if(self.getClientInformation(apBaseUrl) !== null) {
-            self.transition('MODE_SELECTION');
-          } else {
-            self.transition('CLIENT_REGISTRATION');
-          }
-        });
+        cpaProtocol.getServiceInfos(channel.domain,
+          function(err, apBaseUrl, availableModes) {
+            if(err) {
+              return self.error(err.message);
+            }
+
+            self.setCurrentChannelParam('ap_base_url', apBaseUrl);
+            self.setCurrentChannelParam('available_modes', availableModes);
+
+            if(self.getClientInformation(apBaseUrl) !== null) {
+              self.transition('MODE_SELECTION');
+            } else {
+              self.transition('CLIENT_REGISTRATION');
+            }
+          });
       }
     },
 
@@ -546,18 +546,6 @@ var appFsm = new machina.Fsm({
 
         $('#ok-btn').click(function(){
           self.transition('PLAYER');
-        });
-
-        $('#trig-without-btn').click(function(){
-          requestHelper.get(channel.domain + 'resource', null)
-            .success(function(data, textStatus, jqXHR) {
-              Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ', data);
-              alert(data.message);
-            })
-            .fail(function(jqXHR, textStatus) {
-              Logger.error('Reply ' + jqXHR.status + '(' + textStatus + '): ', 'invalid request');
-              alert('invalid request');
-            });
         });
       }
     },

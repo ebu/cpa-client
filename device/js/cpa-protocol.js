@@ -2,13 +2,34 @@
 var cpaProtocol = {};
 cpaProtocol.registration = {};
 
+/**
+ * Endpoints defined in the CPA spec
+ */
 cpaProtocol.config = {
-  ap_register_url: 'register',
-  ap_token_url: 'token',
+  ap_register_url:  'register',
+  ap_token_url:     'token',
   ap_associate_url: 'associate',
-  sp_tokeninfo_url: 'tokeninfo'
+
+  // RadioTag spec
+  sp_discover_url:  'tags'
 };
 
+var parseWwwAuthenticate = function(challenge) {
+  var regex = /(?:(\w*)\=\"(.*?))*\"/g;
+  var mg = [], data = {};
+  while (mg = regex.exec(challenge)) {
+    data[mg[1]] = mg[2];
+  }
+
+  var modesArray = data.modes.split(',');
+  var modes = {
+    client:  (modesArray.indexOf('client') !== -1),
+    user:    (modesArray.indexOf('user') !== -1),
+    anonymous: false
+  };
+
+  return { apBaseUrl: data.uri+'/', modes: modes };
+};
 
 /**
  *  Discover the responsible AP and the available modes for a domain
@@ -16,29 +37,30 @@ cpaProtocol.config = {
 
 
 cpaProtocol.getServiceInfos = function(domain, done) {
+
+  var getServiceInfosCallback = function (jqXHR) {
+    var challenge = jqXHR.getResponseHeader('WWW-Authenticate');
+    if (!challenge) {
+      done(new Error('Missing WWW-Authenticate header. Please, do not use localhost to run the client'));
+      return;
+    }
+
+    var spInfos = parseWwwAuthenticate(challenge);
+    done(null, spInfos.apBaseUrl, spInfos.modes);
+  };
+
   for (var station_name in config.domains) {
     if (config.domains[station_name] === domain) {
-      done(null, config.apBaseUrl, config.modes[station_name]);
-      return;
+      requestHelper.get(domain + cpaProtocol.config.sp_discover_url)
+        .done(function(body, textStatus, jqXHR) {
+          getServiceInfosCallback(jqXHR);
+        })
+        .fail(function(jqXHR, textStatus, err) {
+          getServiceInfosCallback(jqXHR);
+        });
     }
   }
   done(new Error('Unable to find available modes for domain : ' + domain));
-};
-
-/**
- * Discover available modes for a domain
- */
-
-cpaProtocol.getAvailableModes = function(domain, done) {
-
-  requestHelper.get(domain + cpaProtocol.config.sp_tokeninfo_url)
-    .success(function(data, textStatus, jqXHR) {
-      done(null, { anonymous: true, client: true, user: true });
-    })
-    .fail(function(jqXHR, textStatus) {
-      Logger.error('Unable to discover authentication modes: ' + jqXHR.status + '(' + textStatus + '): ', 'request failed');
-      done(new Error({message: 'Unable to discover authentication modes', 'jqXHR': jqXHR}), jqXHR.status, textStatus);
-    });
 };
 
 /**
