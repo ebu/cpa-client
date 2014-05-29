@@ -327,7 +327,7 @@ var appFsm = new machina.Fsm({
           '1.0.2',
           function(err, clientId, clientSecret) {
             if(err) {
-              return error(err);
+              return self.error(err);
             }
 
             self.setClientInformation(channel.ap_base_url, clientId, clientSecret);
