@@ -16,9 +16,9 @@ cpaProtocol.config = {
 
 var parseWwwAuthenticate = function(challenge) {
   var regex = /(?:(\w*)\=\"(.*?))*\"/g;
-  var mg = [], data = {};
-  while (mg = regex.exec(challenge)) {
-    data[mg[1]] = mg[2];
+  var match = [], data = {};
+  while (match = regex.exec(challenge)) {
+    data[match[1]] = match[2];
   }
 
   var modesArray = data.modes.split(',');
