@@ -41,7 +41,7 @@ cpaProtocol.getServiceInfos = function(domain, done) {
   var getServiceInfosCallback = function (jqXHR) {
     var challenge = jqXHR.getResponseHeader('WWW-Authenticate');
     if (!challenge) {
-      done(new Error('Missing WWW-Authenticate header. Please, do not use localhost to run the client'));
+      done(new Error('Missing WWW-Authenticate header. Please, make sure CORS headers are correctly sent. ("Access-Control-Expose-Headers: WWW-Authenticate")'));
       return;
     }
 
