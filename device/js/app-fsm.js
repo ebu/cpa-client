@@ -484,16 +484,24 @@ var appFsm = new machina.Fsm({
         var channel = self.getCurrentChannel();
         var associationCode = self.getAssociationCode(channel.domain);
 
-        appViews.displayUserCode(associationCode.user_code, associationCode.verification_url);
+        if (associationCode.user_code || associationCode.verification_url) {
+          appViews.displayUserCode(associationCode.user_code, associationCode.verification_url);
 
-        $('#verify_code_btn').click(function() {
-          self.handle('onValidatePairingClick');
-        });
+          $('#verify_code_btn').click(function() {
+            self.handle('onValidatePairingClick');
+          });
 
-        this.validatePollTimeout = setTimeout(function() {
-          Logger.info('Polling to validate pairing and retrieve the access token.');
-          self.handle('onValidatePairingClick');
-        }, 5000);
+          this.validatePollTimeout = setTimeout(function() {
+            Logger.info('Polling to validate pairing and retrieve the access token.');
+            self.handle('onValidatePairingClick');
+          }, 5000);
+        }
+        else {
+          // If there's no user code and no verification url, the server will
+          // automatically provision an access token, we can request the token
+          // immediately.
+          this.transition('AUTHORIZATION_CHECK');
+        }
       },
 
       'onValidatePairingClick': function() {

@@ -1,12 +1,14 @@
 <div class="well-small">
 
-  <h4>Connect to <br><strong><%= verification_uri %></strong><br>and enter the following code:</h4>
-  <h1><%= user_code %></h1>
-
-  <div id="verify_code_btn" class="btn btn-success btn-large">Done!</div>
+  <% if (user_code && verification_uri) { %>
+    <h4>Connect to <br><strong><%= verification_uri %></strong><br>and enter the following code:</h4>
+    <h1><%= user_code %></h1>
+    <div id="verify_code_btn" class="btn btn-success btn-large">Done!</div>
+  <% } else if (verification_uri) { %>
+    <h4>Connect to <br><strong><%= verification_uri %></strong><br> to register your radio</h4>
+    <div id="verify_code_btn" class="btn btn-success btn-large">Done!</div>
+  <% } else { %>
+    <h4>Please wait...</h4>
+  <% } %>
 
 </div>
-
-
-
-
