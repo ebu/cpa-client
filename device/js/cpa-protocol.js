@@ -49,8 +49,11 @@ cpaProtocol.getServiceInfos = function(domain, done) {
     done(null, spInfos.apBaseUrl, spInfos.modes);
   };
 
+  var found = false;
+
   for (var station_name in config.domains) {
     if (config.domains[station_name] === domain) {
+      found = true;
       requestHelper.get(domain + cpaProtocol.config.sp_discover_url)
         .done(function(body, textStatus, jqXHR) {
           getServiceInfosCallback(jqXHR);
@@ -60,7 +63,10 @@ cpaProtocol.getServiceInfos = function(domain, done) {
         });
     }
   }
-  done(new Error('Unable to find available modes for domain : ' + domain));
+
+  if (!found) {
+    done(new Error('Unable to find available modes for domain : ' + domain));
+  }
 };
 
 /**
