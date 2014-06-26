@@ -219,8 +219,8 @@ var appFsm = new machina.Fsm({
         for(var channelName in config.domains) {
           var channel = {
             name: channelName,
-            domain: config.domains[channelName],
-            radiodns_id: 'dab.ce1.ce15.c221.' + channelName, //dummy
+            domain: config.domains[channelName].domain,
+            radiodns_id: config.domains[channelName].id || 'dab.ce1.ce15.c221.' + channelName, //dummy
             ap_base_url: null,
             available_modes: {}
           };
