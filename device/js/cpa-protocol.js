@@ -52,7 +52,7 @@ cpaProtocol.getServiceInfos = function(domain, done) {
   var found = false;
 
   for (var station_name in config.domains) {
-    if (config.domains[station_name] === domain) {
+    if (config.domains[station_name].domain === domain) {
       found = true;
       requestHelper.get(domain + cpaProtocol.config.sp_discover_url)
         .done(function(body, textStatus, jqXHR) {
