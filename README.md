@@ -19,6 +19,7 @@ More information on the [EBU Cross-Platform Authentication project](http://tech.
 
 * [Chris Needham](https://github.com/chrisn) (BBC)
 * [Michael Barroco](https://github.com/barroco) (EBU)
+* [Matthew Glubb](https://github.com/mglubb) (Kite Development & Consulting)
 
 
 ## Copyright & License
