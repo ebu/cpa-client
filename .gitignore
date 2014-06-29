@@ -3,3 +3,4 @@ device/js/config.js
 webflow/data/dev.sqlite
 
 webflow/data/dev.sqlite
+device/bower_components
