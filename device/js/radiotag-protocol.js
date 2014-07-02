@@ -1,4 +1,3 @@
-
 var radioTag = {};
 
 radioTag.config = {
@@ -30,7 +29,14 @@ radioTag.tag = function(channel, token, done) {
   var body = 'station='+channel.radiodns_id+'&time='+Math.floor(new Date().getTime()/1000);
 
   var requestToken = (token.mode === 'ANONYMOUS_MODE') ? null : token.access_token;
-  requestHelper.postForm(token.domain + radioTag.config.sp_tag_url, body, requestToken)
+
+  var url = new URI({
+    protocol: channel.https ? "https" : "http",
+    hostname: token.domain,
+    path:     radioTag.config.sp_tag_url,
+  });
+
+  requestHelper.postForm(url, body, requestToken)
     .success(function(xmlData) {
       var tag = extractTags(xmlData)[0];
 
@@ -40,12 +46,16 @@ radioTag.tag = function(channel, token, done) {
       Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ');
       done(null);
     });
-
 };
 
+radioTag.listTags = function(channel, token, done) {
+  var url = new URI({
+    protocol: channel.https ? "https" : "http",
+    hostname: token.domain,
+    path:     radioTag.config.sp_listtag_url,
+  });
 
-radioTag.listTags = function(token, done) {
-  requestHelper.get(token.domain + radioTag.config.sp_listtag_url, token.access_token)
+  requestHelper.get(url, token.access_token)
     .success(function(xmlData) {
       var tags = extractTags(xmlData);
       done(null, tags);
@@ -54,5 +64,4 @@ radioTag.listTags = function(token, done) {
       Logger.info('Reply ' + jqXHR.status + '(' + textStatus + '): ');
       done(null);
     });
-
 };
