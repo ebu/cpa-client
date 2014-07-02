@@ -597,7 +597,7 @@ var appFsm = new machina.Fsm({
 
         appViews.listTags(channel, mode);
 
-        radioTag.listTags(token, function(err, tags) {
+        radioTag.listTags(channel, token, function(err, tags) {
           if(err) {
             self.error(err);
           }
