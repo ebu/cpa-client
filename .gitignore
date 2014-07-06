@@ -1,8 +1,8 @@
-device/js/config.js
-
-webflow/data/dev.sqlite
-
-webflow/data/dev.sqlite
-device/bower_components
-
 bower_components
+
+device/js/config.js
+device/bower_components
+device/node_modules
+
+webflow/data/dev.sqlite
+
