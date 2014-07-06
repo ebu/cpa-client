@@ -7,13 +7,11 @@ define(['jquery', 'jquery.storage'], function($) {
       },
 
       get: function(key) {
-        console.log(key);
         return $.localStorage.get(key);
       },
 
       // Return the value of a stored object
       getValue: function(key, objKey) {
-        console.log('GET ', key, objKey);
         var obj = this.get(key) || {};
         if (obj[objKey]) {
           return obj[objKey];
