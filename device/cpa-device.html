@@ -57,40 +57,8 @@
 </div>
 
 
-<script src="bower_components/requirejs/require.js"></script>
+<script data-main="js/main" src="bower_components/requirejs/require.js"></script>
 <script>
-  require.config({
-    baseUrl: 'js',
-    paths: {
-      'jquery':      '../bower_components/jquery/dist/jquery.min',
-      'jquery.storage': '../bower_components/jquery-storage/jquery.storageapi.min',
-      'dateformat':  '../bower_components/jquery-dateformat/dist/dateFormat.min',
-      'bootstrap':   '../bower_components/bootstrap/dist/js/bootstrap.min',
-      'ejs':         '../bower_components/ejs_production/index',
-      'machina':     '../bower_components/machina/lib/machina',
-      'underscore':  '../bower_components/underscore/underscore-min',
-      'logger':      '../bower_components/js-logger/src/logger.min',
-      'cpa':         '../bower_components/cpa.js/dist/cpa.min',
-      'radiotag':    '../bower_components/radiotag.js/dist/radiotag'
-      //'config': 'config'
-    },
-    shim: {
-      underscore: {
-        exports: '_'
-      },
-      jquery: {
-        exports: '$'
-      },
-      'jquery.storage': ['jquery'],
-      ejs: {
-        exports: 'EJS'
-      },
-      dateformat: {
-        exports: 'DateFormat.format'
-      }
-    }
-  });
-  require(['app-fsm']);
 
 </script>
 

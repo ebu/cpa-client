@@ -25,21 +25,21 @@
     "tests"
   ],
   "dependencies": {
-    "radiotag.js": "*",
+    "requirejs": "~2.1.14",
+    "jquery": "~2.1.1",
     "jquery-storage": "julien-maurel/jQuery-Storage-API#~1.7.2",
     "jquery-dateformat": "jquery-dateFormat#master",
-    "ejs":       "~1.0.0",
+    "ejs": "https://embeddedjavascript.googlecode.com/files/ejs_production.js",
     "bootstrap": "~3.2.0",
-    "machina":   "~0.3.6",
-    "requirejs": "~2.1.14",
+    "machina": "~0.3.6",
     "js-logger": "~0.9.2",
-    "ejs_production": "https://embeddedjavascript.googlecode.com/files/ejs_production.js"
+    "cpa.js": "*",
+    "radiotag.js": "*"
   },
   "install": {
     "path": "lib",
     "sources": {
-      "ejs":    "ejs.min.js",
-      "jquery": "dist/jquery.min.js"
+      "jquery-dateformat": "bower_components/jquery-dateformat/dist/dateFormat.min.js"
     }
   }
 }
