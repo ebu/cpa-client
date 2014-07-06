@@ -57,24 +57,42 @@
 </div>
 
 
-<script type="text/javascript" src="js/lib/jquery.min.js"></script>
-<script type="text/javascript" src="js/lib/jquery.storageapi.min.js"></script>
-<script type="text/javascript" src="js/lib/jquery.dateformat.min.js"></script>
-<script type="text/javascript" src="js/lib/bootstrap.min.js"></script>
-<script type="text/javascript" src="js/lib/ejs_0.9_alpha_1_production.js"></script>
+<script src="bower_components/requirejs/require.js"></script>
+<script>
+  require.config({
+    baseUrl: 'js',
+    paths: {
+      'jquery':      '../bower_components/jquery/dist/jquery.min',
+      'jquery.storage': '../bower_components/jquery-storage/jquery.storageapi.min',
+      'dateformat':  '../bower_components/jquery-dateformat/dist/dateFormat.min',
+      'bootstrap':   '../bower_components/bootstrap/dist/js/bootstrap.min',
+      'ejs':         '../bower_components/ejs_production/index',
+      'machina':     '../bower_components/machina/lib/machina',
+      'underscore':  '../bower_components/underscore/underscore-min',
+      'logger':      '../bower_components/js-logger/src/logger.min',
+      'cpa':         '../bower_components/cpa.js/dist/cpa.min',
+      'radiotag':    '../bower_components/radiotag.js/dist/radiotag'
+      //'config': 'config'
+    },
+    shim: {
+      underscore: {
+        exports: '_'
+      },
+      jquery: {
+        exports: '$'
+      },
+      'jquery.storage': ['jquery'],
+      ejs: {
+        exports: 'EJS'
+      },
+      dateformat: {
+        exports: 'DateFormat.format'
+      }
+    }
+  });
+  require(['app-fsm']);
 
-<script type="text/javascript" src="js/lib/underscore.min.js"></script>
-<script type="text/javascript" src="js/lib/machina.min.js"></script>
-
-<script type="text/javascript" src="js/lib/logger.min.js"></script>
-<script type="text/javascript" src="js/logger.js"></script>
-
-<script type="text/javascript" src="js/config.js"></script>
-<script type="text/javascript" src="js/storage.js"></script>
-<script type="text/javascript" src="js/request-helper.js"></script>
-<script type="text/javascript" src="js/cpa-protocol.js"></script>
-<script type="text/javascript" src="js/radiotag-protocol.js"></script>
-<script type="text/javascript" src="js/app-fsm.js"></script>
+</script>
 
 </body>
 </html>

@@ -10,7 +10,7 @@ require([
     'radiotag'
   ],
   function(machina, $, EJS, Logger, DateFormat, config, storage, cpa, radiotag) {
-console.log(storage);
+
     var appViews = {
       switchView: function(name, body) {
         $('#display-title').html(name);
@@ -281,7 +281,6 @@ console.log(storage);
 
           'onChannelClick': function(channelName, domain) {
             var self = this;
-
             self.setCurrentChannel(channelName);
             var channel = self.getCurrentChannel();
 
@@ -308,7 +307,7 @@ console.log(storage);
             var self = this;
             var channel = self.getCurrentChannel();
 
-            cpaProtocol.getServiceInfos(channel.domain,
+            radiotag.getAuthProvider(channel.domain,
               function(err, apBaseUrl, availableModes) {
                 if(err) {
                   return self.error(err.message);
@@ -333,7 +332,7 @@ console.log(storage);
             var self = this;
             var channel = self.getCurrentChannel();
 
-            cpaProtocol.registerClient(channel.ap_base_url,
+            cpa.device.registerClient(channel.ap_base_url,
               'Demo Client',
               'cpa-client',
               '1.0.2',
@@ -441,7 +440,7 @@ console.log(storage);
             var clientInformation = self.getClientInformation(channel.ap_base_url);
 
             if (!associationCode){
-              cpaProtocol.requestUserCode(channel.ap_base_url,
+              cpa.device.requestUserCode(channel.ap_base_url,
                 clientInformation.client_id,
                 clientInformation.client_secret,
                 channel.domain,
@@ -475,7 +474,7 @@ console.log(storage);
             var channel = self.getCurrentChannel();
             var clientInformation = self.getClientInformation(channel.ap_base_url);
 
-            cpaProtocol.requestClientAccessToken(channel.ap_base_url,
+            cpa.device.requestClientAccessToken(channel.ap_base_url,
               clientInformation.client_id,
               clientInformation.client_secret,
               channel.domain,
@@ -534,7 +533,7 @@ console.log(storage);
             var associationCode = self.getAssociationCode(channel.domain);
             var clientInformation = self.getClientInformation(channel.ap_base_url);
 
-            cpaProtocol.requestUserAccessToken(channel.ap_base_url,
+            cpa.device.requestUserAccessToken(channel.ap_base_url,
               clientInformation.client_id,
               clientInformation.client_secret,
               associationCode.device_code,
@@ -589,7 +588,7 @@ console.log(storage);
             });
 
             $('#tag-btn').click(function() {
-              radioTag.tag(channel.radiodns_id,
+              radiotag.tag(channel.radiodns_id,
                 channel.domain,
                 token.access_token,
                 function(err, tag) {
@@ -612,7 +611,7 @@ console.log(storage);
 
             appViews.listTags(channel, mode);
 
-            radioTag.listTags(token.domain, token.access_token, function(err, tags) {
+            radiotag.listTags(token.domain, token.access_token, function(err, tags) {
               if(err) {
                 self.error(err);
               }

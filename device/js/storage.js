@@ -1,86 +1,79 @@
-define(['jquery'], function($) {
+define(['jquery', 'jquery.storage'], function($) {
 
-  var storage = {
-    persistent: {},
-    volatile: {}
-  };
+  return {
+    persistent: {
+      put: function(key, value) {
+        $.localStorage.set(key, value);
+      },
 
-  storage.persistent = {
+      get: function(key) {
+        console.log(key);
+        return $.localStorage.get(key);
+      },
 
-    put: function(key, value) {
-      $.localStorage.set(key, value);
-    },
+      // Return the value of a stored object
+      getValue: function(key, objKey) {
+        console.log('GET ', key, objKey);
+        var obj = this.get(key) || {};
+        if (obj[objKey]) {
+          return obj[objKey];
+        }
+        return null;
+      },
 
-    get: function(key) {
-      return $.localStorage.get(key);
-    },
+      // Set the value of a stored object
+      setValue: function(key, objKey, value) {
+        var obj = $.localStorage.get(key) || {};
+        obj[objKey] = value;
+        this.put(key, obj);
+      },
 
-    // Return the value of a stored object
-    getValue: function(key, objKey) {
-      var obj = this.get(key) || {};
-      if(obj[objKey]) {
-        return obj[objKey];
+      'delete': function(key) {
+        $.localStorage.set(key, null);
       }
-      return null;
     },
 
-    // Set the value of a stored object
-    setValue: function(key, objKey, value) {
-      var obj = $.localStorage.get(key) || {};
-      obj[objKey] = value;
-      this.put(key, obj);
-    },
+    volatile: {
+      data: {},
 
-    'delete': function(key) {
-      $.localStorage.set(key, null);
-    }
+      put: function(key, value) {
+        this.data[key] = value;
+      },
 
-  };
+      // Return the value of a stored object
+      getValue: function(key, objKey) {
+        var obj = this.get(key) || {};
+        if (obj[objKey]) {
+          return obj[objKey];
+        }
+        return null;
+      },
 
-  storage.volatile = {
+      // Set the value of a stored object
+      setValue: function(key, objKey, value) {
+        var obj = this.get(key) || {};
+        obj[objKey] = value;
+        this.put(key, obj);
+      },
 
-    data: {},
+      get: function(key) {
+        return this.data[key];
+      },
 
-    put: function(key, value) {
-      this.data[key] = value;
-    },
+      'delete': function(key) {
+        delete this.data[key];
+      },
 
-    // Return the value of a stored object
-    getValue: function(key, objKey) {
-      var obj = this.get(key) || {};
-      if(obj[objKey]) {
-        return obj[objKey];
+      dump: function() {
+        //Deep copy
+        return $.extend(true, {}, this.data);
       }
-      return null;
     },
 
-    // Set the value of a stored object
-    setValue: function(key, objKey, value) {
-      var obj = this.get(key) || {};
-      obj[objKey] = value;
-      this.put(key, obj);
-    },
-
-    get: function(key) {
-      return this.data[key];
-    },
-
-    'delete': function(key) {
-      delete this.data[key];
-    },
-
-    dump: function () {
-      //Deep copy
-      return $.extend(true, {}, this.data);
+    reset: function() {
+      this.volatile.data = {};
+      $.localStorage.removeAll();
     }
-
   };
-
-  storage.reset = function(){
-    storage.volatile.data = {};
-    $.localStorage.clear();
-  };
-
-  return storage;
 });
 
