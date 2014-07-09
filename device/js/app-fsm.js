@@ -594,7 +594,9 @@ require([
                 function(err, tag) {
                   if (err) {
                     self.error(err);
+                    return;
                   }
+
                   var body = '<strong>' + tag.title + '</strong>';
                   $('#message-panel').addClass('alert alert-success').html(body);
                 });
