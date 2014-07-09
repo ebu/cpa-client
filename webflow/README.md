@@ -1,7 +1,7 @@
 # Cross-Platform Authentication - WebFlow client
 
 This project contains a reference implementation of the Cross-Platform
-Authentication Service Provider.
+WebFlow client.
 
 More information on the [EBU Cross-Platform Authentication project](http://tech.ebu.ch/cpa)
 
@@ -11,8 +11,8 @@ Ensure your system has [Node.js](http://nodejs.org/) (v0.10 or later) and NPM in
 
 ## Getting Started
 
-    $ git clone https://github.com/ebu/cpa-service-provider.git
-    $ cd cpa-service-provider
+    $ git clone https://github.com/ebu/cpa-client.git
+    $ cd cpa-client/webflow
     $ npm install
 
 ## Run the Tests
