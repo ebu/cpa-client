@@ -30,6 +30,14 @@
     </div>
 
 
-    <script data-main="js/main" src="lib/requirejs/require.js"></script>
+    <script data-main="js/main" src="bower_components/requirejs/require.js"></script>
+
+    <script>
+      window.onload = function() {
+        if (window['require'] === undefined) {
+          document.write('Unable to load dependencies. Did you forget to run `bower install`?');
+        }
+      };
+    </script>
   </body>
 </html>
