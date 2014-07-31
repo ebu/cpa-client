@@ -230,8 +230,9 @@ require([
             var channels = [];
             for(var channelName in config.domains) {
               var channel = {
-                name: channelName,
-                domain: config.domains[channelName].domain,
+                name:        channelName,
+                domain:      config.domains[channelName].domain,
+                http:        config.domains[channelName].http,
                 radiodns_id: config.domains[channelName].id || 'dab.ce1.ce15.c221.' + channelName, //dummy
                 ap_base_url: null,
                 available_modes: {}
@@ -307,7 +308,9 @@ require([
             var self = this;
             var channel = self.getCurrentChannel();
 
-            radiotag.getAuthProvider(channel.domain,
+            var uri = cpa.utils.getUri(channel.domain, channel.http);
+
+            radiotag.getAuthProvider(uri,
               function(err, apBaseUrl, availableModes) {
                 if(err) {
                   return self.error(err.message);
@@ -588,8 +591,10 @@ require([
             });
 
             $('#tag-btn').click(function() {
+              var uri = cpa.utils.getUri(channel.domain, channel.http);
+
               radiotag.tag(channel.radiodns_id,
-                channel.domain,
+                uri,
                 token.access_token,
                 function(err, tag) {
                   if (err) {
@@ -613,7 +618,9 @@ require([
 
             appViews.listTags(channel, mode);
 
-            radiotag.listTags(token.domain, token.access_token, function(err, tags) {
+            var uri = cpa.utils.getUri(channel.domain, channel.http);
+
+            radiotag.listTags(uri, token.access_token, function(err, tags) {
               if(err) {
                 self.error(err);
               }
