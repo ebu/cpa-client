@@ -3,16 +3,17 @@ require.config({
   baseUrl: 'js',
   paths: {
     //Run bower-installer to download the following dependencies
-    'jquery':      '../lib/jquery/jquery',
-    'jquery.storage': '../lib/jquery-storage/jquery.storageapi',
-    'dateformat':  '../lib/jquery-dateformat/dateFormat.min',
-    'bootstrap':   '../lib/bootstrap/bootstrap',
-    'ejs':         '../lib/ejs/index',
-    'machina':     '../lib/machina/machina',
-    'underscore':  '../lib/underscore/underscore',
-    'logger':      '../lib/js-logger/logger',
-    'cpa':         '../lib/cpa.js/cpa.min',
-    'radiotag':    '../lib/radiotag.js/radiotag.min'
+    'bootstrap':      '../bower_components/bootstrap/dist/js/bootstrap',
+    'cpa':            '../bower_components/cpa.js/dist/cpa',
+    'jquery':         '../bower_components/jquery/dist/jquery.min',
+    'dateformat':     '../bower_components/jquery-dateformat/dist/dateFormat.min',
+    'jquery.storage': '../bower_components/jquery-storage/jquery.storageapi',
+    'logger':         '../bower_components/js-logger/src/logger',
+    'ejs':            '../bower_components/ejs/index',
+    'machina':        '../bower_components/machina/lib/machina.min',
+    'radiotag':       '../bower_components/radiotag.js/dist/radiotag',
+    'underscore':     '../bower_components/underscore/underscore-min',
+    'URIjs':          '../bower_components/URIjs/src'
   },
   shim: {
     underscore: {

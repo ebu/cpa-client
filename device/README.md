@@ -31,8 +31,6 @@ $ npm install -g bower-installer
 
 $ bower install
 
-$ bower-installer
-
 ```
 
 ### Use local versions of cpa.js and radiotag.js
