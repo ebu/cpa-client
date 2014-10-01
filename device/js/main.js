@@ -12,11 +12,10 @@ require.config({
     'ejs':            '../bower_components/ejs/index',
     'machina':        '../bower_components/machina/lib/machina.min',
     'radiotag':       '../bower_components/radiotag.js/dist/radiotag',
-    'underscore':     '../bower_components/underscore/underscore-min',
-    'URIjs':          '../bower_components/URIjs/src'
+    'lodash':         '../bower_components/lodash/dist/lodash.min'
   },
   shim: {
-    underscore: {
+    lodash: {
       exports: '_'
     },
     jquery: {
