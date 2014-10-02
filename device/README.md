@@ -1,13 +1,13 @@
 CPA Device Client
 =================
 
-This folder contains a stand-alone cpa device client. 
+This folder contains a stand-alone CPA device client.
 
 ## Install
 
 1. Edit config.js (example in config.dist.js)
 
-2. Run it through a http server. The client is a static html page.
+2. Run it through a HTTP server. The client is a static HTML page.
 
 ```bash
 
@@ -63,4 +63,3 @@ bower link radiotag.js
 
 Don't forget to use `grunt watch` in cpa.js and radiotag.js folders in order
 to compile the files when changed.
-
