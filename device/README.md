@@ -3,63 +3,67 @@ CPA Device Client
 
 This folder contains a stand-alone CPA device client.
 
-## Install
+## Prerequisites
 
-1. Edit config.js (example in config.dist.js)
+Ensure your system has [Node.js](http://nodejs.org/) (v0.10 or later) and NPM installed.
 
-2. Run it through a HTTP server. The client is a static HTML page.
+Install [Bower](http://bower.io/):
 
-```bash
+    $ sudo npm install -g bower
+    $ sudo npm install -g bower-installer
 
-npm install -g http-server
+## Getting Started
 
-http-server .
+    $ git clone https://github.com/ebu/cpa-client.git
+    $ cd cpa-client/device
+    $ npm install
+    $ bower install
 
-```
+## Configure
 
-3. Go to `http://localhost:8080/cpa-device.html`
+The client reads configuration settings from the file `js/config.js`.
+An example config for reference is in `config.dist.js`.
 
+    $ cp js/config.dist.js config.js
 
-## Development 
+Edit `js/config.js` to set the Service Provider domains.
 
-### Build
-```bash
+## Start the server
 
-$ npm install -g bower
+The client is hosted in a static HTML page. To run the client, you can use a
+Node.js static Web server such as
+[http-server](https://github.com/nodeapps/http-server)
+or [node-static](https://github.com/cloudhead/node-static).
 
-$ npm install -g bower-installer
+For example, using http-server
 
-$ bower install
+    $ sudo npm install -g http-server
+    $ http-server .
 
-```
+Then, open your browser at `http://localhost:8080/cpa-device.html`
 
-### Use local versions of cpa.js and radiotag.js
+## Development
 
-If you want to use this client to change either [cpa.js](https://github.com/ebu/cpa.js)
-or [radiotag.js](https://github.com/ebu/radiotag.js), you can use the following
-instructions in order to link it to a local repo.
+If you want to use this client to change either the [cpa.js](https://github.com/ebu/cpa.js)
+or [radiotag.js](https://github.com/ebu/radiotag.js) libraries, you can use the
+following instructions to link the client to local repositories.
 
-Clone the repository and create the link.
+In a separate directory, clone the cpa.js repository and create the link:
 
-```bash
-git clone https://github.com/ebu/cpa.js
+    $ git clone https://github.com/ebu/cpa.js
+    $ cd cpa.js
+    $ bower link
 
-cd cpa.js
+Similarly, for radiotag.js:
 
-bower link
-
-```
-
-The same applies to radiotag.js. 
+    $ git clone https://github.com/ebu/radiotag.js
+    $ cd radiotag.js
+    $ bower link
 
 Then, go to `cpa-client/device` and type:
 
-```bash
-
-bower link cpa.js
-bower link radiotag.js
-
-```
+    $ bower link cpa.js
+    $ bower link radiotag.js
 
 Don't forget to use `grunt watch` in cpa.js and radiotag.js folders in order
 to compile the files when changed.
