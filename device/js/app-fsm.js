@@ -593,7 +593,9 @@ require([
             $('#tag-btn').click(function() {
               var uri = radiotag.utils.getUri(channel.domain, channel.http);
 
-              radiotag.tag(channel.radiodns_id,
+              radiotag.tag(
+                channel.radiodns_id,
+                'user', // time_source
                 uri,
                 token.access_token,
                 function(err, tag) {
