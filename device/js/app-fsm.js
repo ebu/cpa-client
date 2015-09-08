@@ -308,9 +308,9 @@ require([
             var self = this;
             var channel = self.getCurrentChannel();
 
-            var uri = radiotag.utils.getUri(channel.domain, channel.http);
+            var baseUrl = radiotag.utils.getUrl(channel.domain, channel.http);
 
-            radiotag.getAuthProvider(uri,
+            radiotag.getAuthProvider(baseUrl,
               function(err, apBaseUrl, availableModes) {
                 if(err) {
                   return self.error(err.message);
@@ -591,12 +591,13 @@ require([
             });
 
             $('#tag-btn').click(function() {
-              var uri = radiotag.utils.getUri(channel.domain, channel.http);
+              var baseUrl = radiotag.utils.getUrl(channel.domain, channel.http);
 
               radiotag.tag(
+                baseUrl,
                 channel.radiodns_id,
-                'user', // time_source
-                uri,
+                'user', // timeSource
+                new Date(),
                 token.access_token,
                 function(err, tag) {
                   if (err) {
@@ -620,9 +621,9 @@ require([
 
             appViews.listTags(channel, mode);
 
-            var uri = radiotag.utils.getUri(channel.domain, channel.http);
+            var baseUrl = radiotag.utils.getUrl(channel.domain, channel.http);
 
-            radiotag.listTags(uri, token.access_token, function(err, tags) {
+            radiotag.getTags(baseUrl, token.access_token, function(err, tags) {
               if(err) {
                 self.error(err);
               }
