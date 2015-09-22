@@ -4,12 +4,13 @@ require([
     'ejs',
     'logger',
     'dateformat',
-    './config',
     './storage',
     'cpa',
     'radiotag'
   ],
-  function(machina, $, EJS, Logger, DateFormat, config, storage, cpa, radiotag) {
+  function(machina, $, EJS, Logger, DateFormat, storage, cpa, radiotag) {
+
+    var config = {};
 
     var appViews = {
       switchView: function(name, body) {
@@ -205,9 +206,19 @@ require([
         this.transition('ERROR');
       },
 
-      initialState: 'DEVICE_OFF',
+      initialState: 'GET_CONFIG',
 
-      states : {
+      states: {
+        'GET_CONFIG': {
+          _onEnter: function() {
+            var self = this;
+
+            $.getJSON('/config', function(data) {
+              config = data;
+              self.transition('DEVICE_OFF');
+            });
+          },
+        },
 
         'DEVICE_OFF': {
           _onEnter: function() {

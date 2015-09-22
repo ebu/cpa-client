@@ -21,24 +21,25 @@ Install [Bower](http://bower.io/):
 
 ## Configure
 
-The client reads configuration settings from the file `js/config.js`.
+The client reads configuration settings from the file `config.js`.
 An example config for reference is in `config.dist.js`.
 
-    $ cp js/config.dist.js config.js
+    $ cp config.dist.js config.js
 
-Edit `js/config.js` to set the Service Provider domains.
+Edit `config.js` to set the Service Provider domains.
 
 ## Start the server
 
-The client is hosted in a static HTML page. To run the client, you can use a
-Node.js static Web server such as
-[http-server](https://github.com/nodeapps/http-server)
-or [node-static](https://github.com/cloudhead/node-static).
+The client is hosted in a static HTML page, run from a Node.js Express
+application.
 
-For example, using http-server
+To start the server on the default port (8000):
 
-    $ sudo npm install -g http-server
-    $ http-server .
+    $ npm start
+
+To use a different port, set the `PORT` environment variable:
+
+    $ PORT=8080 npm start
 
 Then, open your browser at `http://localhost:8080/cpa-device.html`
 
@@ -67,3 +68,14 @@ Then, go to `cpa-client/device` and type:
 
 Don't forget to use `grunt watch` in cpa.js and radiotag.js folders in order
 to compile the files when changed.
+
+## Contributors
+
+* [Michael Barroco](https://github.com/barroco) (EBU)
+* [Chris Needham](https://github.com/chrisn) (BBC)
+
+## Copyright & License
+
+Copyright (c) 2014-2015, EBU-UER Technology & Innovation
+
+The code is under BSD (3-Clause) License. (see LICENSE.txt)
