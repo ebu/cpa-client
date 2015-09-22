@@ -16,6 +16,15 @@
   <![endif]-->
 
   <style>
+    #radio-container {
+      width: 800px;
+      margin: 0 auto;
+    }
+
+    #radio-layout {
+      position: absolute;
+    }
+
     #display {
       position: absolute;
       top: 307px;
@@ -28,25 +37,23 @@
       padding: 20px;
     }
 
-    #power_btn{
+    #power_btn {
       position: absolute;
       top: 550px;
       left: 385px;
     }
 
-    #reset_btn{
+    #reset_btn {
       position: absolute;
       top: 550px;
       left: 435px;
     }
   </style>
-
 </head>
 <body>
 
-<div style="width:800px; margin:0 auto;">
-  <div style="position:absolute;">
-
+<div id="radio-container">
+  <div id="radio-layout">
     <img src="img/radio-layout.png">
 
     <div id="display"></div>
