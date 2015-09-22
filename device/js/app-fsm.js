@@ -26,7 +26,8 @@ require([
           day:  DateFormat.date(now, 'ddd'),
           date: DateFormat.date(now, 'dd MMM yyyy'),
           time: DateFormat.date(now, 'hh:m')
-          });
+        });
+
         this.switchView('device_off', html);
       },
 
@@ -38,8 +39,9 @@ require([
       },
 
       displayModeSelection: function(availableModes) {
-        var html = new EJS({url: 'views/mode-selection.ejs'})
-          .render({availableModes: availableModes});
+        var html = new EJS({url: 'views/mode-selection.ejs'}).render({
+          availableModes: availableModes
+        });
         this.switchView('mode_selection', html);
       },
 
@@ -77,7 +79,6 @@ require([
           };
         }
 
-
         var html = new EJS({url: 'views/success.ejs'}).render(message);
         this.switchView('Device paired', html);
       },
@@ -105,12 +106,11 @@ require([
       }
     };
 
-
     var appFsm = new machina.Fsm({
 
       initialize: function() {
-
         var self = this;
+
         $('#power_btn').click(function() {
           if (self.state === 'DEVICE_OFF') {
             self.handle('switch_on');
@@ -224,8 +224,8 @@ require([
             appViews.displayProgress('Scanning...');
 
             this.handle('getChannelList');
-
           },
+
           'getChannelList': function() {
             var channels = [];
             for(var channelName in config.domains) {
@@ -399,20 +399,22 @@ require([
 
             self.setMode(channel.domain, mode);
 
+            switch (mode) {
+              case 'USER_MODE':
+                self.transition('AUTHORIZATION_INIT');
+                break;
 
-            if(mode === 'USER_MODE') {
-              self.transition('AUTHORIZATION_INIT');
-            }
-            else if(mode === 'CLIENT_MODE') {
-              self.transition('CLIENT_AUTH_INIT');
-            }
-            else if(mode == 'ANONYMOUS_MODE') {
-              self.transition('ANONYMOUS_INIT');
-            }
-            else {
-              return self.error(new Error('Unknown mode'));
-            }
+              case 'CLIENT_MODE':
+                self.transition('CLIENT_AUTH_INIT');
+                break;
 
+              case 'ANONYMOUS_MODE':
+                self.transition('ANONYMOUS_INIT');
+                break;
+
+              default:
+                return self.error(new Error('Unknown mode'));
+            }
           }
         },
 
@@ -443,7 +445,8 @@ require([
             var clientInformation = self.getClientInformation(channel.ap_base_url);
 
             if (!associationCode){
-              cpa.device.requestUserCode(channel.ap_base_url,
+              cpa.device.requestUserCode(
+                channel.ap_base_url,
                 clientInformation.client_id,
                 clientInformation.client_secret,
                 channel.domain,
@@ -466,7 +469,6 @@ require([
             } else {
               self.transition('AUTHORIZATION_PENDING');
             }
-
           }
         },
 
@@ -477,7 +479,8 @@ require([
             var channel = self.getCurrentChannel();
             var clientInformation = self.getClientInformation(channel.ap_base_url);
 
-            cpa.device.requestClientAccessToken(channel.ap_base_url,
+            cpa.device.requestClientAccessToken(
+              channel.ap_base_url,
               clientInformation.client_id,
               clientInformation.client_secret,
               channel.domain,
@@ -536,7 +539,8 @@ require([
             var associationCode = self.getAssociationCode(channel.domain);
             var clientInformation = self.getClientInformation(channel.ap_base_url);
 
-            cpa.device.requestUserAccessToken(channel.ap_base_url,
+            cpa.device.requestUserAccessToken(
+              channel.ap_base_url,
               clientInformation.client_id,
               clientInformation.client_secret,
               associationCode.device_code,
@@ -564,7 +568,12 @@ require([
             var token = self.getToken(channel.domain);
             var mode = token.mode;
 
-            appViews.successfulPairing(token.access_token, mode, token.domain_display_name, token.user_name);
+            appViews.successfulPairing(
+              token.access_token,
+              mode,
+              token.domain_display_name,
+              token.user_name
+            );
 
             $('#ok-btn').click(function(){
               self.transition('PLAYER');
