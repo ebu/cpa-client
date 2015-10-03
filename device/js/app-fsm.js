@@ -350,12 +350,17 @@ require([
               'Demo Client',
               'cpa-client',
               '1.0.2',
-              function(err, clientId, clientSecret) {
+              function(err, client) {
                 if(err) {
                   return self.error(err);
                 }
 
-                self.setClientInformation(channel.ap_base_url, clientId, clientSecret);
+                self.setClientInformation(
+                  channel.ap_base_url,
+                  client.client_id,
+                  client.client_secret
+                );
+
                 self.transition('MODE_SELECTION');
               });
           }
